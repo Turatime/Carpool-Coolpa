@@ -1,7 +1,11 @@
 .env
-venv/
-__pycache__/
-*.pyc
-*.pyo
-.claude/settings.local.json
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+dist/
+build/
+.DS_Store
+logs
+*.log
 data/
