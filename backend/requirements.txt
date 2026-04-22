@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+sqlalchemy
+pydantic
+pydantic-settings
+python-multipart
+python-jose[cryptography]
+passlib[bcrypt]
+bcrypt==4.0.1
+# sqlite3 is built-in
+python-dotenv
+# cors is built-in in fastapi
+email-validator

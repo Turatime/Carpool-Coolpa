@@ -1,30 +1,27 @@
 version: '3.8'
 
 services:
-  db:
-    image: mysql:8.0
-    restart: always
-    environment:
-      MYSQL_DATABASE: carpool_db
-      MYSQL_ROOT_PASSWORD: yourpassword
-    ports:
-      - "3306:3306"
-
   backend:
-    build: ./carpool/backend
+    build: ./backend
+    container_name: carpool_backend
     ports:
-      - "5000:5000"
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - ./db/data:/app/db/data
     environment:
-      - DB_HOST=db
-      - DB_USER=root
-      - DB_PASSWORD=yourpassword
-      - DB_NAME=carpool_db
-    depends_on:
-      - db
+      - DATABASE_URL=sqlite:///./db/data/carpool.db
+      - SECRET_KEY=your-secret-key-here
+    restart: always
 
   frontend:
-    build: ./carpool/frontend
+    build: ./frontend
+    container_name: carpool_frontend
     ports:
-      - "3000:3000"
-    stdin_open: true
-    tty: true
+      - "80:80"
+    depends_on:
+      - backend
+    restart: always
+
+volumes:
+  db-data:

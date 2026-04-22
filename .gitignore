@@ -1,11 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+env/
 .env
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-dist/
-build/
+
+# Database
+db/data/
+*.db
+*.sqlite3
+
+# OS
 .DS_Store
-logs
-*.log
-data/
+Thumbs.db
+
+# Docker
+docker-compose.override.yml
