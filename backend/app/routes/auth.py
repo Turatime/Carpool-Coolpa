@@ -68,7 +68,13 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
     return {
         "access_token": access_token, 
         "token_type": "bearer",
-        "user": {"id": new_user.id, "full_name": new_user.full_name, "email": new_user.email, "role": new_user.role}
+        "user": {
+            "id": new_user.id,
+            "full_name": new_user.full_name,
+            "email": new_user.email,
+            "phone": new_user.phone,
+            "role": new_user.role
+        }
     }
 
 @router.post("/login", response_model=Token)
@@ -81,5 +87,11 @@ def login(user_data: UserLogin, db: Session = Depends(get_db)):
     return {
         "access_token": access_token, 
         "token_type": "bearer",
-        "user": {"id": user.id, "full_name": user.full_name, "email": user.email, "role": user.role}
+        "user": {
+            "id": user.id,
+            "full_name": user.full_name,
+            "email": user.email,
+            "phone": user.phone,
+            "role": user.role
+        }
     }

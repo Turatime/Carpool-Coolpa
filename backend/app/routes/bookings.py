@@ -20,6 +20,15 @@ def create_booking(booking_data: BookingCreate, db: Session = Depends(get_db)):
     if not trip:
         raise HTTPException(status_code=404, detail="Trip not found")
 
+    if trip.status != "active":
+        raise HTTPException(status_code=400, detail="This trip is not available for booking")
+
+    if trip.driver_id == booking_data.passenger_id:
+        raise HTTPException(status_code=400, detail="Drivers cannot book their own trips")
+
+    if booking_data.seats_booked <= 0:
+        raise HTTPException(status_code=400, detail="Seats booked must be greater than 0")
+
     if trip.available_seats < booking_data.seats_booked:
         raise HTTPException(status_code=400, detail="Not enough seats available")
 

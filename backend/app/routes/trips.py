@@ -27,6 +27,8 @@ class TripOut(BaseModel):
     available_seats: int
     price_per_seat: float
     status: str
+    booking_count: int
+    can_cancel: bool
     driver: dict
 
     class Config:
@@ -53,6 +55,33 @@ def get_driver_stats(driver_id: int, db: Session):
         "trip_count": trip_count
     }
 
+
+def build_trip_response(trip: Trip, driver: User, db: Session):
+    stats = get_driver_stats(driver.id, db)
+    booking_count = db.query(Booking).filter(Booking.trip_id == trip.id).count()
+
+    return {
+        "id": trip.id,
+        "driver_id": trip.driver_id,
+        "origin": trip.origin,
+        "destination": trip.destination,
+        "departure_time": trip.departure_time,
+        "total_seats": trip.total_seats,
+        "available_seats": trip.available_seats,
+        "price_per_seat": trip.price_per_seat,
+        "status": trip.status,
+        "booking_count": booking_count,
+        "can_cancel": trip.status == "active" and booking_count == 0,
+        "driver": {
+            "id": driver.id,
+            "full_name": driver.full_name,
+            "phone": driver.phone,
+            "rating": stats["rating"],
+            "review_count": stats["review_count"],
+            "trip_count": stats["trip_count"]
+        }
+    }
+
 @router.get("/", response_model=List[TripOut])
 def get_trips(origin: Optional[str] = None, destination: Optional[str] = None, user_id: int = None, db: Session = Depends(get_db)):
     query = db.query(Trip).filter(
@@ -72,26 +101,7 @@ def get_trips(origin: Optional[str] = None, destination: Optional[str] = None, u
     results = []
     for trip in trips:
         driver = db.query(User).filter(User.id == trip.driver_id).first()
-        stats = get_driver_stats(driver.id, db)
-        
-        results.append({
-            "id": trip.id,
-            "driver_id": trip.driver_id,
-            "origin": trip.origin,
-            "destination": trip.destination,
-            "departure_time": trip.departure_time,
-            "total_seats": trip.total_seats,
-            "available_seats": trip.available_seats,
-            "price_per_seat": trip.price_per_seat,
-            "status": trip.status,
-            "driver": {
-                "id": driver.id, 
-                "full_name": driver.full_name,
-                "rating": stats["rating"],
-                "review_count": stats["review_count"],
-                "trip_count": stats["trip_count"]
-            }
-        })
+        results.append(build_trip_response(trip, driver, db))
     return results
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
@@ -117,24 +127,29 @@ def get_user_trips(user_id: int, db: Session = Depends(get_db)):
     results = []
     for trip in trips:
         driver = db.query(User).filter(User.id == trip.driver_id).first()
-        stats = get_driver_stats(driver.id, db)
-        
-        results.append({
-            "id": trip.id,
-            "driver_id": trip.driver_id,
-            "origin": trip.origin,
-            "destination": trip.destination,
-            "departure_time": trip.departure_time,
-            "total_seats": trip.total_seats,
-            "available_seats": trip.available_seats,
-            "price_per_seat": trip.price_per_seat,
-            "status": trip.status,
-            "driver": {
-                "id": driver.id, 
-                "full_name": driver.full_name,
-                "rating": stats["rating"],
-                "review_count": stats["review_count"],
-                "trip_count": stats["trip_count"]
-            }
-        })
+        results.append(build_trip_response(trip, driver, db))
     return results
+
+
+@router.put("/{trip_id}/cancel")
+def cancel_trip(trip_id: int, driver_id: int, db: Session = Depends(get_db)):
+    trip = db.query(Trip).filter(Trip.id == trip_id).first()
+    if not trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+
+    if trip.driver_id != driver_id:
+        raise HTTPException(status_code=403, detail="You can only cancel your own trip")
+
+    if trip.status == "cancelled":
+        return {"message": "Trip already cancelled", "status": "cancelled"}
+
+    booking_count = db.query(Booking).filter(Booking.trip_id == trip.id).count()
+    if booking_count > 0:
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot cancel this trip because it already has bookings"
+        )
+
+    trip.status = "cancelled"
+    db.commit()
+    return {"message": "Trip cancelled", "status": "cancelled"}
