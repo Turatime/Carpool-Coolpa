@@ -1060,7 +1060,7 @@
 
     async function loadTrips() {
       try {
-        const res = await fetch(`${API_URL}/trips/`);
+        const res = await fetch(`${API_URL}/trips/?user_id=${currentUser.id}`);
         const trips = await res.json();
         renderTrips(trips, 'tripsContainer');
       } catch (e) { console.error(e); }
@@ -1070,16 +1070,17 @@
       const origin = document.getElementById('searchOrigin').value;
       const dest = document.getElementById('searchDest').value;
       try {
-        const res = await fetch(`${API_URL}/trips/?origin=${origin}&destination=${dest}`);
+        const res = await fetch(`${API_URL}/trips/?origin=${origin}&destination=${dest}&user_id=${currentUser.id}`);
         const trips = await res.json();
         const container = document.getElementById('searchResults');
         if (trips.length === 0) {
-            container.innerHTML = '<div class="empty-state"><p>ไม่พบทริปที่ค้นหา</p></div>';
+              container.innerHTML = '<div class="empty-state"><p>ไม่พบทริปที่ค้นหา</p></div>';
         } else {
-            renderTrips(trips, 'searchResults');
+              renderTrips(trips, 'searchResults');
         }
       } catch (e) { console.error(e); }
     }
+
 
     function renderTrips(trips, containerId) {
       const container = document.getElementById(containerId);

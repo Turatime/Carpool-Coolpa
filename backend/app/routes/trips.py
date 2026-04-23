@@ -54,10 +54,17 @@ def get_driver_stats(driver_id: int, db: Session):
     }
 
 @router.get("/", response_model=List[TripOut])
-def get_trips(origin: Optional[str] = None, destination: Optional[str] = None, db: Session = Depends(get_db)):
-    query = db.query(Trip).filter(Trip.status == "active")
+def get_trips(origin: Optional[str] = None, destination: Optional[str] = None, user_id: int = None, db: Session = Depends(get_db)):
+    query = db.query(Trip).filter(
+        Trip.status == "active",
+        Trip.available_seats > 0 )
+
+    if user_id:
+        query = query.filter(Trip.driver_id != user_id)
+
     if origin:
         query = query.filter(Trip.origin.ilike(f"%{origin}%"))
+
     if destination:
         query = query.filter(Trip.destination.ilike(f"%{destination}%"))
     
