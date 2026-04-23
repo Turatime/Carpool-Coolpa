@@ -13,6 +13,9 @@ class TripCreate(BaseModel):
     driver_id: int
     origin: str
     destination: str
+    car_brand: str
+    car_model: str
+    license_plate: str
     departure_time: datetime
     total_seats: int
     price_per_seat: float
@@ -22,6 +25,9 @@ class TripOut(BaseModel):
     driver_id: int
     origin: str
     destination: str
+    car_brand: str
+    car_model: str
+    license_plate: str
     departure_time: datetime
     total_seats: int
     available_seats: int
@@ -65,6 +71,9 @@ def build_trip_response(trip: Trip, driver: User, db: Session):
         "driver_id": trip.driver_id,
         "origin": trip.origin,
         "destination": trip.destination,
+        "car_brand": trip.car_brand,
+        "car_model": trip.car_model,
+        "license_plate": trip.license_plate,
         "departure_time": trip.departure_time,
         "total_seats": trip.total_seats,
         "available_seats": trip.available_seats,
@@ -110,6 +119,9 @@ def create_trip(trip_data: TripCreate, db: Session = Depends(get_db)):
         driver_id=trip_data.driver_id,
         origin=trip_data.origin,
         destination=trip_data.destination,
+        car_brand=trip_data.car_brand,
+        car_model=trip_data.car_model,
+        license_plate=trip_data.license_plate,
         departure_time=trip_data.departure_time,
         total_seats=trip_data.total_seats,
         available_seats=trip_data.total_seats,

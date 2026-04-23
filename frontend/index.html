@@ -411,6 +411,12 @@
       color: var(--text-soft);
     }
 
+    .trip-card__vehicle {
+      margin-top: 6px;
+      font-size: 0.88rem;
+      color: var(--text-body);
+    }
+
     .trip-card__price {
       text-align: right;
     }
@@ -892,6 +898,20 @@
               <input id="tripSeats" type="number" value="4" min="1">
             </div>
           </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>ยี่ห้อรถ</label>
+              <input id="tripCarBrand" type="text" placeholder="เช่น Toyota" required>
+            </div>
+            <div class="form-group">
+              <label>รุ่นรถ</label>
+              <input id="tripCarModel" type="text" placeholder="เช่น Yaris Ativ" required>
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom:16px">
+            <label>เลขทะเบียน</label>
+            <input id="tripLicensePlate" type="text" placeholder="เช่น 1กข 1234" required>
+          </div>
           <div class="form-group" style="margin-bottom:16px">
             <label>ราคาต่อที่นั่ง (฿)</label>
             <input id="tripPrice" type="number" placeholder="เช่น 200">
@@ -1136,6 +1156,7 @@
               <div>
                 <h3>${t.driver.full_name}</h3>
                 <div class="trip-card__contact">เบอร์ติดต่อ: ${t.driver.phone || 'ไม่มีข้อมูล'}</div>
+                <div class="trip-card__vehicle">รถ: ${t.car_brand} ${t.car_model} • ทะเบียน ${t.license_plate}</div>
                 <div class="trip-card__rating">⭐ ${t.driver.rating > 0 ? t.driver.rating : 'ไม่มีรีวิว'} (${t.driver.trip_count} ทริป)</div>
               </div>
             </div>
@@ -1165,6 +1186,8 @@
         <div class="booking-form">
           <h3>จองทริป: ${trip.origin} → ${trip.destination}</h3>
           <p>คนขับ: ${trip.driver.full_name} | ราคา: ฿${trip.price_per_seat}/ที่นั่ง</p>
+          <p>รถ: ${trip.car_brand} ${trip.car_model} | ทะเบียน: ${trip.license_plate}</p>
+          <p>เบอร์ติดต่อ: ${trip.driver.phone || 'ไม่มีข้อมูล'}</p>
           <div class="form-group">
             <label>เลือกจำนวนที่นั่ง (ว่าง ${trip.available_seats})</label>
             <select id="bookSeats">
@@ -1205,13 +1228,26 @@
       const dest = document.getElementById('tripDest').value;
       const time = document.getElementById('tripTime').value;
       const seats = parseInt(document.getElementById('tripSeats').value);
+      const carBrand = document.getElementById('tripCarBrand').value;
+      const carModel = document.getElementById('tripCarModel').value;
+      const licensePlate = document.getElementById('tripLicensePlate').value;
       const price = parseFloat(document.getElementById('tripPrice').value);
 
       try {
         const res = await fetch(`${API_URL}/trips/`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ driver_id: currentUser.id, origin, destination: dest, departure_time: new Date(time).toISOString(), total_seats: seats, price_per_seat: price })
+          body: JSON.stringify({
+            driver_id: currentUser.id,
+            origin,
+            destination: dest,
+            car_brand: carBrand,
+            car_model: carModel,
+            license_plate: licensePlate,
+            departure_time: new Date(time).toISOString(),
+            total_seats: seats,
+            price_per_seat: price
+          })
         });
         if (res.ok) {
           showAlert('tripSuccess', 'สร้างทริปสำเร็จ!', 'success');
@@ -1277,6 +1313,8 @@
             <div class="booking-item__info">
               <h4>${t.origin} → ${t.destination}</h4>
               <div class="driver-trip-meta">
+                <span>${t.car_brand} ${t.car_model}</span>
+                <span>ทะเบียน ${t.license_plate}</span>
                 <span>${new Date(t.departure_time).toLocaleString('th-TH')}</span>
                 <span>ว่าง ${t.available_seats}/${t.total_seats} ที่</span>
                 <span>${t.booking_count} booking</span>

@@ -1,11 +1,30 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
+from sqlalchemy import inspect, text
 from app.models.base import engine, Base, get_db
 from app.routes import auth, trips, bookings, wallet, reviews
 
 # Create database tables (in case they don't exist)
 Base.metadata.create_all(bind=engine)
+
+
+def ensure_trip_vehicle_columns():
+    inspector = inspect(engine)
+    columns = {column["name"] for column in inspector.get_columns("trips")}
+    missing_columns = {
+        "car_brand": "ALTER TABLE trips ADD COLUMN car_brand VARCHAR NOT NULL DEFAULT ''",
+        "car_model": "ALTER TABLE trips ADD COLUMN car_model VARCHAR NOT NULL DEFAULT ''",
+        "license_plate": "ALTER TABLE trips ADD COLUMN license_plate VARCHAR NOT NULL DEFAULT ''",
+    }
+
+    with engine.begin() as connection:
+        for name, ddl in missing_columns.items():
+            if name not in columns:
+                connection.execute(text(ddl))
+
+
+ensure_trip_vehicle_columns()
 
 app = FastAPI(title="Carpool-Coolpa API")
 
