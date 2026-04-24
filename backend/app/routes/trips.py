@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
 from ..models.base import get_db
-from ..models.schemas import Trip, User, Review, Booking
+from ..models.schemas import Trip, User, Review, Booking, Vehicle
 
 router = APIRouter()
 
@@ -13,9 +13,10 @@ class TripCreate(BaseModel):
     driver_id: int
     origin: str
     destination: str
-    car_brand: str
-    car_model: str
-    license_plate: str
+    vehicle_id: Optional[int] = None
+    car_brand: Optional[str] = None
+    car_model: Optional[str] = None
+    license_plate: Optional[str] = None
     departure_time: datetime
     total_seats: int
     price_per_seat: float
@@ -25,9 +26,7 @@ class TripOut(BaseModel):
     driver_id: int
     origin: str
     destination: str
-    car_brand: str
-    car_model: str
-    license_plate: str
+    vehicle_id: int
     departure_time: datetime
     total_seats: int
     available_seats: int
@@ -36,6 +35,7 @@ class TripOut(BaseModel):
     booking_count: int
     can_cancel: bool
     driver: dict
+    vehicle: dict
 
     class Config:
         from_attributes = True
@@ -62,18 +62,22 @@ def get_driver_stats(driver_id: int, db: Session):
     }
 
 
-def build_trip_response(trip: Trip, driver: User, db: Session):
+def build_trip_response(trip: Trip, driver: User, vehicle: Vehicle, db: Session):
     stats = get_driver_stats(driver.id, db)
     booking_count = db.query(Booking).filter(Booking.trip_id == trip.id).count()
+    vehicle_payload = {
+        "id": vehicle.id if vehicle else None,
+        "brand": vehicle.brand if vehicle else "",
+        "model": vehicle.model if vehicle else "",
+        "plate_number": vehicle.plate_number if vehicle else "",
+    }
 
     return {
         "id": trip.id,
         "driver_id": trip.driver_id,
         "origin": trip.origin,
         "destination": trip.destination,
-        "car_brand": trip.car_brand,
-        "car_model": trip.car_model,
-        "license_plate": trip.license_plate,
+        "vehicle_id": trip.vehicle_id,
         "departure_time": trip.departure_time,
         "total_seats": trip.total_seats,
         "available_seats": trip.available_seats,
@@ -88,7 +92,8 @@ def build_trip_response(trip: Trip, driver: User, db: Session):
             "rating": stats["rating"],
             "review_count": stats["review_count"],
             "trip_count": stats["trip_count"]
-        }
+        },
+        "vehicle": vehicle_payload
     }
 
 @router.get("/", response_model=List[TripOut])
@@ -110,18 +115,53 @@ def get_trips(origin: Optional[str] = None, destination: Optional[str] = None, u
     results = []
     for trip in trips:
         driver = db.query(User).filter(User.id == trip.driver_id).first()
-        results.append(build_trip_response(trip, driver, db))
+        vehicle = db.query(Vehicle).filter(Vehicle.id == trip.vehicle_id).first()
+        results.append(build_trip_response(trip, driver, vehicle, db))
     return results
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
 def create_trip(trip_data: TripCreate, db: Session = Depends(get_db)):
+    driver = db.query(User).filter(User.id == trip_data.driver_id).first()
+    if not driver:
+        raise HTTPException(status_code=404, detail="Driver not found")
+
+    vehicle = None
+    if trip_data.vehicle_id:
+        vehicle = db.query(Vehicle).filter(
+            Vehicle.id == trip_data.vehicle_id,
+            Vehicle.owner_id == trip_data.driver_id
+        ).first()
+        if not vehicle:
+            raise HTTPException(status_code=404, detail="Vehicle not found for this driver")
+    else:
+        if not trip_data.car_brand or not trip_data.car_model or not trip_data.license_plate:
+            raise HTTPException(
+                status_code=400,
+                detail="Vehicle information is required"
+            )
+
+        vehicle = db.query(Vehicle).filter(
+            Vehicle.owner_id == trip_data.driver_id,
+            Vehicle.brand == trip_data.car_brand,
+            Vehicle.model == trip_data.car_model,
+            Vehicle.plate_number == trip_data.license_plate
+        ).first()
+
+        if not vehicle:
+            vehicle = Vehicle(
+                owner_id=trip_data.driver_id,
+                brand=trip_data.car_brand,
+                model=trip_data.car_model,
+                plate_number=trip_data.license_plate
+            )
+            db.add(vehicle)
+            db.flush()
+
     new_trip = Trip(
         driver_id=trip_data.driver_id,
+        vehicle_id=vehicle.id,
         origin=trip_data.origin,
         destination=trip_data.destination,
-        car_brand=trip_data.car_brand,
-        car_model=trip_data.car_model,
-        license_plate=trip_data.license_plate,
         departure_time=trip_data.departure_time,
         total_seats=trip_data.total_seats,
         available_seats=trip_data.total_seats,
@@ -139,7 +179,8 @@ def get_user_trips(user_id: int, db: Session = Depends(get_db)):
     results = []
     for trip in trips:
         driver = db.query(User).filter(User.id == trip.driver_id).first()
-        results.append(build_trip_response(trip, driver, db))
+        vehicle = db.query(Vehicle).filter(Vehicle.id == trip.vehicle_id).first()
+        results.append(build_trip_response(trip, driver, vehicle, db))
     return results
 
 

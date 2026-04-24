@@ -3,28 +3,84 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy import inspect, text
 from app.models.base import engine, Base, get_db
-from app.routes import auth, trips, bookings, wallet, reviews
+from app.routes import auth, trips, bookings, wallet, reviews, vehicles
 
-# Create database tables (in case they don't exist)
-Base.metadata.create_all(bind=engine)
-
-
-def ensure_trip_vehicle_columns():
+def ensure_schema_compatibility():
+    Base.metadata.create_all(bind=engine)
     inspector = inspect(engine)
-    columns = {column["name"] for column in inspector.get_columns("trips")}
-    missing_columns = {
-        "car_brand": "ALTER TABLE trips ADD COLUMN car_brand VARCHAR NOT NULL DEFAULT ''",
-        "car_model": "ALTER TABLE trips ADD COLUMN car_model VARCHAR NOT NULL DEFAULT ''",
-        "license_plate": "ALTER TABLE trips ADD COLUMN license_plate VARCHAR NOT NULL DEFAULT ''",
-    }
 
     with engine.begin() as connection:
-        for name, ddl in missing_columns.items():
-            if name not in columns:
-                connection.execute(text(ddl))
+        user_columns = {column["name"] for column in inspector.get_columns("users")}
+        if "balance" not in user_columns:
+            connection.execute(text("ALTER TABLE users ADD COLUMN balance FLOAT NOT NULL DEFAULT 0.0"))
 
+        vehicle_columns = {column["name"] for column in inspector.get_columns("vehicles")}
+        if "brand" not in vehicle_columns:
+            connection.execute(text("ALTER TABLE vehicles ADD COLUMN brand VARCHAR NOT NULL DEFAULT ''"))
+        if "created_at" not in vehicle_columns:
+            connection.execute(text("ALTER TABLE vehicles ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP"))
 
-ensure_trip_vehicle_columns()
+        trip_columns = {column["name"] for column in inspector.get_columns("trips")}
+        if "vehicle_id" not in trip_columns:
+            connection.execute(text("ALTER TABLE trips ADD COLUMN vehicle_id INTEGER"))
+
+        if "car_brand" in trip_columns and "vehicle_id" in {column["name"] for column in inspect(engine).get_columns("trips")}:
+            legacy_trips = connection.execute(text("""
+                SELECT id, driver_id, car_brand, car_model, license_plate
+                FROM trips
+                WHERE vehicle_id IS NULL
+            """)).fetchall()
+
+            for trip in legacy_trips:
+                brand = trip.car_brand or ""
+                model = trip.car_model or ""
+                plate_number = trip.license_plate or ""
+                existing_vehicle = connection.execute(
+                    text("""
+                        SELECT id FROM vehicles
+                        WHERE owner_id = :owner_id
+                          AND brand = :brand
+                          AND model = :model
+                          AND plate_number = :plate_number
+                        LIMIT 1
+                    """),
+                    {
+                        "owner_id": trip.driver_id,
+                        "brand": brand,
+                        "model": model,
+                        "plate_number": plate_number,
+                    },
+                ).fetchone()
+
+                if existing_vehicle:
+                    vehicle_id = existing_vehicle.id
+                else:
+                    inserted_vehicle = connection.execute(
+                        text("""
+                            INSERT INTO vehicles (owner_id, brand, model, plate_number)
+                            VALUES (:owner_id, :brand, :model, :plate_number)
+                        """),
+                        {
+                            "owner_id": trip.driver_id,
+                            "brand": brand,
+                            "model": model,
+                            "plate_number": plate_number,
+                        },
+                    )
+                    vehicle_id = inserted_vehicle.lastrowid
+
+                connection.execute(
+                    text("UPDATE trips SET vehicle_id = :vehicle_id WHERE id = :trip_id"),
+                    {"vehicle_id": vehicle_id, "trip_id": trip.id},
+                )
+
+        review_columns = {column["name"] for column in inspector.get_columns("reviews")}
+        if "booking_id" not in review_columns:
+            connection.execute(text("ALTER TABLE reviews ADD COLUMN booking_id INTEGER"))
+        if "driver_id" not in review_columns:
+            connection.execute(text("ALTER TABLE reviews ADD COLUMN driver_id INTEGER"))
+
+ensure_schema_compatibility()
 
 app = FastAPI(title="Carpool-Coolpa API")
 
@@ -39,6 +95,7 @@ app.add_middleware(
 
 # Include Routers
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
+app.include_router(vehicles.router, prefix="/api/vehicles", tags=["Vehicles"])
 app.include_router(trips.router, prefix="/api/trips", tags=["Trips"])
 app.include_router(bookings.router, prefix="/api/bookings", tags=["Bookings"])
 app.include_router(wallet.router, prefix="/api/wallet", tags=["Wallet"])

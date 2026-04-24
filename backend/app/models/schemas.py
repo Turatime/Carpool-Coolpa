@@ -9,24 +9,35 @@ class User(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     password = Column(String, nullable=False)
     phone = Column(String)
-    role = Column(String, default="user")
     balance = Column(Float, default=0.0) # Wallet balance
     created_at = Column(DateTime, server_default=func.now())
 
+    vehicles = relationship("Vehicle", back_populates="owner")
     trips = relationship("Trip", back_populates="driver")
     bookings = relationship("Booking", back_populates="passenger")
     reviews_given = relationship("Review", foreign_keys="Review.reviewer_id", back_populates="reviewer")
     reviews_received = relationship("Review", foreign_keys="Review.driver_id", back_populates="driver")
 
+
+class Vehicle(Base):
+    __tablename__ = "vehicles"
+    id = Column(Integer, primary_key=True, index=True)
+    owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    brand = Column(String, nullable=False)
+    model = Column(String, nullable=False)
+    plate_number = Column(String, nullable=False)
+    created_at = Column(DateTime, server_default=func.now())
+
+    owner = relationship("User", back_populates="vehicles")
+    trips = relationship("Trip", back_populates="vehicle")
+
 class Trip(Base):
     __tablename__ = "trips"
     id = Column(Integer, primary_key=True, index=True)
     driver_id = Column(Integer, ForeignKey("users.id"))
+    vehicle_id = Column(Integer, ForeignKey("vehicles.id"), nullable=False)
     origin = Column(String, nullable=False)
     destination = Column(String, nullable=False)
-    car_brand = Column(String, nullable=False, default="")
-    car_model = Column(String, nullable=False, default="")
-    license_plate = Column(String, nullable=False, default="")
     departure_time = Column(DateTime, nullable=False)
     total_seats = Column(Integer, nullable=False)
     available_seats = Column(Integer, nullable=False)
@@ -35,6 +46,7 @@ class Trip(Base):
     created_at = Column(DateTime, server_default=func.now())
 
     driver = relationship("User", back_populates="trips")
+    vehicle = relationship("Vehicle", back_populates="trips")
     bookings = relationship("Booking", back_populates="trip")
     reviews = relationship("Review", back_populates="trip")
 

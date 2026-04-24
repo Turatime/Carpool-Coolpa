@@ -646,6 +646,47 @@
       font-size: 0.9rem;
     }
 
+    .vehicle-manager {
+      background: var(--surface-solid);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .vehicle-manager h4 {
+      margin: 0 0 14px;
+      color: var(--text-strong);
+    }
+
+    .vehicle-list {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .vehicle-card {
+      background: var(--surface-solid);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .vehicle-card h4 {
+      margin: 0 0 6px;
+      color: var(--text-strong);
+    }
+
+    .vehicle-card p {
+      margin: 0;
+      color: var(--text-soft);
+      font-size: 0.92rem;
+    }
+
     .btn-small {
       padding: 8px 16px;
       border-radius: 8px;
@@ -835,6 +876,10 @@
               <strong>🔍 ค้นหาทริป</strong>
               <small>หาเพื่อนร่วมทางไปที่เดียวกับคุณ</small>
             </button>
+            <button class="action-card" onclick="showScreen('my-vehicles')">
+              <strong>🚗 รถของฉัน</strong>
+              <small>จัดการรถที่ใช้สร้างทริปของคุณ</small>
+            </button>
             <button class="action-card" onclick="showScreen('create-trip')">
               <strong>➕ สร้างทริป</strong>
               <small>แชร์ที่ว่างในรถของคุณ</small>
@@ -876,6 +921,16 @@
     <div id="screen-create-trip" class="screen">
       <main class="dashboard-layout">
         <button class="btn-small" onclick="showScreen('dashboard')" style="margin-bottom:20px">← กลับ</button>
+        <div class="vehicle-manager">
+          <h4>เลือกรถสำหรับทริปนี้</h4>
+          <div class="form-group" style="margin-bottom:16px">
+            <label>เลือกรถที่จะใช้ในทริป</label>
+            <select id="tripVehicleSelect">
+              <option value="">เลือกรถของคุณ</option>
+            </select>
+          </div>
+          <button class="btn-small" onclick="showScreen('my-vehicles')">จัดการรถของฉัน</button>
+        </div>
         <div class="booking-form">
           <h3>สร้างทริปใหม่</h3>
           <div class="form-row">
@@ -898,20 +953,6 @@
               <input id="tripSeats" type="number" value="4" min="1">
             </div>
           </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label>ยี่ห้อรถ</label>
-              <input id="tripCarBrand" type="text" placeholder="เช่น Toyota" required>
-            </div>
-            <div class="form-group">
-              <label>รุ่นรถ</label>
-              <input id="tripCarModel" type="text" placeholder="เช่น Yaris Ativ" required>
-            </div>
-          </div>
-          <div class="form-group" style="margin-bottom:16px">
-            <label>เลขทะเบียน</label>
-            <input id="tripLicensePlate" type="text" placeholder="เช่น 1กข 1234" required>
-          </div>
           <div class="form-group" style="margin-bottom:16px">
             <label>ราคาต่อที่นั่ง (฿)</label>
             <input id="tripPrice" type="number" placeholder="เช่น 200">
@@ -919,6 +960,39 @@
           <button class="auth-submit" onclick="createTrip()">ลงประกาศทริป</button>
           <div id="tripError" class="alert alert-error" style="margin-top:10px"></div>
           <div id="tripSuccess" class="alert alert-success" style="margin-top:10px"></div>
+        </div>
+      </main>
+    </div>
+
+    <!-- MY VEHICLES SCREEN -->
+    <div id="screen-my-vehicles" class="screen">
+      <main class="dashboard-layout">
+        <button class="btn-small" onclick="showScreen('dashboard')" style="margin-bottom:20px">← กลับ</button>
+        <h2>รถของฉัน</h2>
+        <div id="vehicleDeleteError" class="alert alert-error"></div>
+        <div id="vehicleDeleteSuccess" class="alert alert-success"></div>
+        <div id="vehiclesList" class="vehicle-list"></div>
+        <div class="vehicle-manager">
+          <h4>เพิ่มรถใหม่</h4>
+          <div id="vehicleError" class="alert alert-error"></div>
+          <div id="vehicleSuccess" class="alert alert-success"></div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>ยี่ห้อรถ</label>
+              <input id="vehicleBrand" type="text" placeholder="เช่น Toyota">
+            </div>
+            <div class="form-group">
+              <label>รุ่นรถ</label>
+              <input id="vehicleModel" type="text" placeholder="เช่น Yaris Ativ">
+            </div>
+          </div>
+          <div class="form-row full">
+            <div class="form-group">
+              <label>เลขทะเบียน</label>
+              <input id="vehiclePlateNumber" type="text" placeholder="เช่น 1กข 1234">
+            </div>
+          </div>
+          <button class="btn-small" onclick="addVehicle()">เพิ่มรถคันนี้</button>
         </div>
       </main>
     </div>
@@ -1005,6 +1079,8 @@
       document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
       document.getElementById('screen-' + screenId).classList.add('active');
       if (screenId === 'dashboard') initDashboard();
+      if (screenId === 'create-trip') loadVehicles();
+      if (screenId === 'my-vehicles') loadVehiclesPage();
       if (screenId === 'my-bookings') {
           loadPassengerBookings();
           loadDriverBookings();
@@ -1141,6 +1217,101 @@
       } catch (e) { console.error(e); }
     }
 
+    async function loadVehicles() {
+      if (!currentUser) return;
+      try {
+        const res = await fetch(`${API_URL}/vehicles/user/${currentUser.id}`);
+        const vehicles = await res.json();
+        const select = document.getElementById('tripVehicleSelect');
+        select.innerHTML = '<option value="">เลือกรถของคุณ</option>';
+        vehicles.forEach(vehicle => {
+          const option = document.createElement('option');
+          option.value = vehicle.id;
+          option.textContent = `${vehicle.brand} ${vehicle.model} • ${vehicle.plate_number}`;
+          select.appendChild(option);
+        });
+      } catch (e) { console.error(e); }
+    }
+
+    async function loadVehiclesPage() {
+      if (!currentUser) return;
+      try {
+        const res = await fetch(`${API_URL}/vehicles/user/${currentUser.id}`);
+        const vehicles = await res.json();
+        const container = document.getElementById('vehiclesList');
+        container.innerHTML = vehicles.length === 0 ? '<div class="empty-state"><p>ยังไม่มีรถที่บันทึกไว้</p></div>' : '';
+
+        vehicles.forEach(vehicle => {
+          const card = document.createElement('div');
+          card.className = 'vehicle-card';
+          card.innerHTML = `
+            <div>
+              <h4>${vehicle.brand} ${vehicle.model}</h4>
+              <p>ทะเบียน ${vehicle.plate_number}</p>
+            </div>
+            <button class="btn-small btn-cancel" onclick="deleteVehicle(${vehicle.id})">ลบรถ</button>
+          `;
+          container.appendChild(card);
+        });
+
+        await loadVehicles();
+      } catch (e) { console.error(e); }
+    }
+
+    async function addVehicle() {
+      const brand = document.getElementById('vehicleBrand').value.trim();
+      const model = document.getElementById('vehicleModel').value.trim();
+      const plateNumber = document.getElementById('vehiclePlateNumber').value.trim();
+      if (!brand || !model || !plateNumber) {
+        showAlert('vehicleError', 'กรอกข้อมูลรถให้ครบก่อน', 'error');
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_URL}/vehicles/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            owner_id: currentUser.id,
+            brand,
+            model,
+            plate_number: plateNumber
+          })
+        });
+        const vehicle = await res.json();
+        if (res.ok) {
+          showAlert('vehicleSuccess', 'เพิ่มรถเรียบร้อยแล้ว', 'success');
+          document.getElementById('vehicleBrand').value = '';
+          document.getElementById('vehicleModel').value = '';
+          document.getElementById('vehiclePlateNumber').value = '';
+          await loadVehicles();
+          await loadVehiclesPage();
+          document.getElementById('tripVehicleSelect').value = vehicle.id;
+        } else {
+          showAlert('vehicleError', vehicle.detail || 'เพิ่มรถไม่สำเร็จ', 'error');
+        }
+      } catch (e) {
+        showAlert('vehicleError', e.message, 'error');
+      }
+    }
+
+    async function deleteVehicle(id) {
+      try {
+        const res = await fetch(`${API_URL}/vehicles/${id}?owner_id=${currentUser.id}`, {
+          method: 'DELETE'
+        });
+        const data = await res.json();
+        if (res.ok) {
+          showAlert('vehicleDeleteSuccess', 'ลบรถเรียบร้อยแล้ว', 'success');
+          await loadVehiclesPage();
+        } else {
+          showAlert('vehicleDeleteError', data.detail || 'ลบรถไม่สำเร็จ', 'error');
+        }
+      } catch (e) {
+        showAlert('vehicleDeleteError', e.message, 'error');
+      }
+    }
+
 
     function renderTrips(trips, containerId) {
       const container = document.getElementById(containerId);
@@ -1156,7 +1327,7 @@
               <div>
                 <h3>${t.driver.full_name}</h3>
                 <div class="trip-card__contact">เบอร์ติดต่อ: ${t.driver.phone || 'ไม่มีข้อมูล'}</div>
-                <div class="trip-card__vehicle">รถ: ${t.car_brand} ${t.car_model} • ทะเบียน ${t.license_plate}</div>
+                <div class="trip-card__vehicle">รถ: ${t.vehicle.brand} ${t.vehicle.model} • ทะเบียน ${t.vehicle.plate_number}</div>
                 <div class="trip-card__rating">⭐ ${t.driver.rating > 0 ? t.driver.rating : 'ไม่มีรีวิว'} (${t.driver.trip_count} ทริป)</div>
               </div>
             </div>
@@ -1186,7 +1357,7 @@
         <div class="booking-form">
           <h3>จองทริป: ${trip.origin} → ${trip.destination}</h3>
           <p>คนขับ: ${trip.driver.full_name} | ราคา: ฿${trip.price_per_seat}/ที่นั่ง</p>
-          <p>รถ: ${trip.car_brand} ${trip.car_model} | ทะเบียน: ${trip.license_plate}</p>
+          <p>รถ: ${trip.vehicle.brand} ${trip.vehicle.model} | ทะเบียน: ${trip.vehicle.plate_number}</p>
           <p>เบอร์ติดต่อ: ${trip.driver.phone || 'ไม่มีข้อมูล'}</p>
           <div class="form-group">
             <label>เลือกจำนวนที่นั่ง (ว่าง ${trip.available_seats})</label>
@@ -1228,10 +1399,13 @@
       const dest = document.getElementById('tripDest').value;
       const time = document.getElementById('tripTime').value;
       const seats = parseInt(document.getElementById('tripSeats').value);
-      const carBrand = document.getElementById('tripCarBrand').value;
-      const carModel = document.getElementById('tripCarModel').value;
-      const licensePlate = document.getElementById('tripLicensePlate').value;
+      const vehicleId = parseInt(document.getElementById('tripVehicleSelect').value);
       const price = parseFloat(document.getElementById('tripPrice').value);
+
+      if (!vehicleId) {
+        showAlert('tripError', 'กรุณาเลือกรถก่อนสร้างทริป', 'error');
+        return;
+      }
 
       try {
         const res = await fetch(`${API_URL}/trips/`, {
@@ -1241,9 +1415,7 @@
             driver_id: currentUser.id,
             origin,
             destination: dest,
-            car_brand: carBrand,
-            car_model: carModel,
-            license_plate: licensePlate,
+            vehicle_id: vehicleId,
             departure_time: new Date(time).toISOString(),
             total_seats: seats,
             price_per_seat: price
@@ -1313,8 +1485,8 @@
             <div class="booking-item__info">
               <h4>${t.origin} → ${t.destination}</h4>
               <div class="driver-trip-meta">
-                <span>${t.car_brand} ${t.car_model}</span>
-                <span>ทะเบียน ${t.license_plate}</span>
+                <span>${t.vehicle.brand} ${t.vehicle.model}</span>
+                <span>ทะเบียน ${t.vehicle.plate_number}</span>
                 <span>${new Date(t.departure_time).toLocaleString('th-TH')}</span>
                 <span>ว่าง ${t.available_seats}/${t.total_seats} ที่</span>
                 <span>${t.booking_count} booking</span>
