@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Carpool Coolpa — รถของฉัน</title>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <div id="headerMount"></div>
+
+  <main class="dashboard-layout">
+    <button class="btn-small" onclick="history.back()" style="margin-bottom:20px">← กลับ</button>
+    <h2>รถของฉัน</h2>
+
+    <div id="vehicleDeleteError"   class="alert alert-error"></div>
+    <div id="vehicleDeleteSuccess" class="alert alert-success"></div>
+
+    <div id="vehiclesList" class="vehicle-list"></div>
+
+    <!-- Add Vehicle Form -->
+    <div class="vehicle-manager">
+      <h4>เพิ่มรถใหม่</h4>
+      <div id="vehicleError"   class="alert alert-error"></div>
+      <div id="vehicleSuccess" class="alert alert-success"></div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>ยี่ห้อรถ</label>
+          <input id="vehicleBrand" type="text" placeholder="เช่น Toyota">
+        </div>
+        <div class="form-group">
+          <label>รุ่นรถ</label>
+          <input id="vehicleModel" type="text" placeholder="เช่น Yaris Ativ">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>เลขทะเบียน</label>
+          <input id="vehiclePlateNumber" type="text" placeholder="เช่น 1กข 1234">
+        </div>
+        <div class="form-group">
+          <label>สีรถ <span style="color:red">*</span></label>
+          <input id="vehicleColor" type="text" placeholder="เช่น สีขาว, สีดำ, สีแดง" required>
+        </div>
+      </div>
+      <button class="btn-small" onclick="addVehicle()">เพิ่มรถคันนี้</button>
+    </div>
+  </main>
+
+  <script src="/js/app.js"></script>
+  <script>
+    window.addEventListener('load', () => {
+      if (!requireAuth()) return;
+      renderHeader('headerMount');
+      loadVehiclesPage();
+    });
+
+    async function loadVehiclesPage() {
+      const user = getUser();
+      try {
+        const res      = await fetch(`${API_URL}/vehicles/user/${user.id}`);
+        const vehicles = await res.json();
+        const container = document.getElementById('vehiclesList');
+        container.innerHTML = vehicles.length === 0
+          ? '<div class="empty-state"><p>ยังไม่มีรถที่บันทึกไว้</p></div>'
+          : '';
+
+        vehicles.forEach(v => {
+          const card = document.createElement('div');
+          card.className = 'vehicle-card';
+          card.innerHTML = `
+            <div>
+              <h4>${v.brand} ${v.model}</h4>
+              <p>ทะเบียน ${v.plate_number}</p>
+              ${v.color ? `<p style="color:#718096; font-size:0.9rem">สี: ${v.color}</p>` : ''}
+            </div>
+            <button class="btn-small btn-cancel" onclick="deleteVehicle(${v.id})">ลบรถ</button>
+          `;
+          container.appendChild(card);
+        });
+      } catch (e) { console.error(e); }
+    }
+
+    async function addVehicle() {
+      const user        = getUser();
+      const brand       = document.getElementById('vehicleBrand').value.trim();
+      const model       = document.getElementById('vehicleModel').value.trim();
+      const plateNumber = document.getElementById('vehiclePlateNumber').value.trim();
+      const color       = document.getElementById('vehicleColor').value.trim();
+
+      if (!brand || !model || !plateNumber || !color) {
+        showAlert('vehicleError', 'กรอกข้อมูลรถให้ครบก่อน (สีรถเป็นข้อมูลที่จำเป็น)', 'error');
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_URL}/vehicles/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ owner_id: user.id, brand, model, plate_number: plateNumber, color })
+        });
+        const vehicle = await res.json();
+        if (res.ok) {
+          showAlert('vehicleSuccess', 'เพิ่มรถเรียบร้อยแล้ว', 'success');
+          document.getElementById('vehicleBrand').value       = '';
+          document.getElementById('vehicleModel').value       = '';
+          document.getElementById('vehiclePlateNumber').value = '';
+          document.getElementById('vehicleColor').value       = '';
+          loadVehiclesPage();
+        } else {
+          showAlert('vehicleError', vehicle.detail || 'เพิ่มรถไม่สำเร็จ', 'error');
+        }
+      } catch (e) { showAlert('vehicleError', e.message, 'error'); }
+    }
+
+    async function deleteVehicle(id) {
+      const user = getUser();
+      try {
+        const res  = await fetch(`${API_URL}/vehicles/${id}?owner_id=${user.id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (res.ok) {
+          showAlert('vehicleDeleteSuccess', 'ลบรถเรียบร้อยแล้ว', 'success');
+          loadVehiclesPage();
+        } else {
+          showAlert('vehicleDeleteError', data.detail || 'ลบรถไม่สำเร็จ', 'error');
+        }
+      } catch (e) { showAlert('vehicleDeleteError', e.message, 'error'); }
+    }
+  </script>
+</body>
+</html>

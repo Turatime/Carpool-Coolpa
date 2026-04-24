@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Carpool Coolpa — หน้าหลัก</title>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <div id="headerMount"></div>
+
+  <div class="dashboard-page">
+    <main class="dashboard-layout">
+      <!-- Welcome Banner -->
+      <div class="welcome-banner">
+        <div>
+          <h2 id="welcomeName">สวัสดี!</h2>
+          <p>วันนี้อยากเดินทางไปที่ไหนดี?</p>
+        </div>
+      </div>
+
+      <!-- Wallet -->
+      <div class="wallet-card">
+        <div>
+          <small>ยอดเงินในกระเป๋า</small><br>
+          <strong id="walletBalance">฿0.00</strong>
+        </div>
+        <div style="display:flex; gap:8px">
+          <input id="topupAmount" type="number" placeholder="จำนวนเงิน"
+                 style="width:100px; padding:8px; border-radius:8px; border:1px solid var(--line)">
+          <button class="topup-btn" onclick="topUpWallet()">เติมเงิน</button>
+        </div>
+      </div>
+      <div id="topupError"   class="alert alert-error"></div>
+      <div id="topupSuccess" class="alert alert-success"></div>
+
+      <!-- Action Grid -->
+      <div class="action-grid">
+        <button class="action-card" onclick="location.href='/pages/search.html'">
+          <strong>🔍 ค้นหาทริป</strong>
+          <small>หาเพื่อนร่วมทางไปที่เดียวกับคุณ</small>
+        </button>
+        <button class="action-card" onclick="location.href='/pages/my-vehicles.html'">
+          <strong>🚗 รถของฉัน</strong>
+          <small>จัดการรถที่ใช้สร้างทริปของคุณ</small>
+        </button>
+        <button class="action-card" onclick="location.href='/pages/create-trip.html'">
+          <strong>➕ สร้างทริป</strong>
+          <small>แชร์ที่ว่างในรถของคุณ</small>
+        </button>
+        <button class="action-card" onclick="location.href='/pages/my-bookings.html'">
+          <strong>📅 รายการจองของฉัน</strong>
+          <small>ดูทริปที่คุณจองหรือคนจองคุณ</small>
+        </button>
+      </div>
+
+      <!-- Recent Trips -->
+      <div class="section-header">
+        <h2>ทริปล่าสุด</h2>
+        <button class="btn-small" onclick="loadTrips()">🔄 รีเฟรช</button>
+      </div>
+      <div id="tripsContainer" class="trip-grid"></div>
+    </main>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    window.addEventListener('load', () => {
+      if (!requireAuth()) return;
+      renderHeader('headerMount');
+      const user = getUser();
+      document.getElementById('welcomeName').textContent = `สวัสดี, ${user.full_name}!`;
+      loadWallet();
+      loadTrips();
+    });
+
+    async function loadWallet() {
+      const user = getUser();
+      try {
+        const res  = await fetch(`${API_URL}/wallet/${user.id}`);
+        const data = await res.json();
+        user.balance = data.balance;
+        localStorage.setItem('user', JSON.stringify(user));
+        document.getElementById('walletBalance').textContent = `฿${data.balance.toLocaleString()}`;
+      } catch (e) { console.error(e); }
+    }
+
+    async function topUpWallet() {
+      const user   = getUser();
+      const amount = parseFloat(document.getElementById('topupAmount').value);
+      if (!amount || amount <= 0) return;
+      try {
+        const res = await fetch(`${API_URL}/wallet/topup`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: user.id, amount })
+        });
+        if (res.ok) {
+          showAlert('topupSuccess', 'เติมเงินสำเร็จ!', 'success');
+          document.getElementById('topupAmount').value = '';
+          loadWallet();
+        }
+      } catch (e) { showAlert('topupError', e.message, 'error'); }
+    }
+
+    async function loadTrips() {
+      const user = getUser();
+      try {
+        const res   = await fetch(`${API_URL}/trips/?user_id=${user.id}`);
+        const trips = await res.json();
+        renderTrips(trips, 'tripsContainer');
+      } catch (e) { console.error(e); }
+    }
+  </script>
+</body>
+</html>

@@ -9,9 +9,12 @@ from ..models.schemas import Review, Booking, Trip, User
 router = APIRouter()
 
 class ReviewCreate(BaseModel):
+    trip_id: int
     booking_id: int
+    reviewer_id: int
+    driver_id: int
     rating: int # 1-5
-    comment: str
+    comment: str = None
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
 def create_review(review_data: ReviewCreate, db: Session = Depends(get_db)):

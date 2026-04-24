@@ -13,6 +13,7 @@ class VehicleCreate(BaseModel):
     brand: str
     model: str
     plate_number: str
+    color: str = None
 
 
 class VehicleOut(BaseModel):
@@ -21,6 +22,7 @@ class VehicleOut(BaseModel):
     brand: str
     model: str
     plate_number: str
+    color: str = None
 
     class Config:
         from_attributes = True
@@ -75,7 +77,8 @@ def create_vehicle(vehicle_data: VehicleCreate, db: Session = Depends(get_db)):
         owner_id=vehicle_data.owner_id,
         brand=vehicle_data.brand,
         model=vehicle_data.model,
-        plate_number=vehicle_data.plate_number
+        plate_number=vehicle_data.plate_number,
+        color=vehicle_data.color
     )
     db.add(vehicle)
     db.commit()

@@ -26,6 +26,7 @@ class Vehicle(Base):
     brand = Column(String, nullable=False)
     model = Column(String, nullable=False)
     plate_number = Column(String, nullable=False)
+    color = Column(String)
     created_at = Column(DateTime, server_default=func.now())
 
     owner = relationship("User", back_populates="vehicles")

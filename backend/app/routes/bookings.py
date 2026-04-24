@@ -114,6 +114,33 @@ def get_driver_bookings(driver_id: int, db: Session = Depends(get_db)):
     return results
 
 
+@router.get("/{booking_id}")
+def get_booking_detail(booking_id: int, db: Session = Depends(get_db)):
+    booking = db.query(Booking).filter(Booking.id == booking_id).first()
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    trip = db.query(Trip).filter(Trip.id == booking.trip_id).first()
+    driver = db.query(User).filter(User.id == trip.driver_id).first() if trip else None
+    return {
+        "id": booking.id,
+        "trip": {
+            "id": trip.id,
+            "origin": trip.origin,
+            "destination": trip.destination,
+            "departure_time": trip.departure_time,
+            "driver_id": trip.driver_id,
+            "driver": {
+                "id": driver.id,
+                "full_name": driver.full_name,
+            } if driver else None,
+        },
+        "seats_booked": booking.seats_booked,
+        "total_price": booking.total_price,
+        "status": booking.status,
+        "created_at": booking.created_at,
+    }
+
+
 @router.put("/{booking_id}/confirm")
 def confirm_booking(booking_id: int, db: Session = Depends(get_db)):
     booking = db.query(Booking).filter(Booking.id == booking_id).first()

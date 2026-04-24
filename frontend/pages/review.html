@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Carpool Coolpa — Rate Your Trip</title>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css">
+  <style>
+    body {
+      background-color: #fdfaf5;
+      margin: 0;
+      padding: 0;
+      font-family: 'Kanit', sans-serif;
+    }
+
+    .review-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      max-width: 500px;
+      margin: 20px auto 40px;
+      padding: 0 20px;
+    }
+
+    /* Banner */
+    .trip-completed-banner {
+      background: linear-gradient(135deg, #a8d5e2 0%, #b8e6d5 100%);
+      border-radius: 24px;
+      padding: 32px 24px;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(168, 213, 226, 0.2);
+    }
+
+    .trip-completed-banner .emoji {
+      font-size: 3rem;
+      margin-bottom: 16px;
+      display: block;
+    }
+
+    .trip-completed-banner h2 {
+      color: white;
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin: 0 0 8px;
+    }
+
+    .trip-completed-banner p {
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 0.95rem;
+      margin: 0;
+    }
+
+    /* Card Base */
+    .card {
+      background: white;
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+      border: 1px solid #f0f0f0;
+    }
+
+    /* Rating Card */
+    .rating-card {
+      text-align: center;
+    }
+
+    .rating-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #333d4d;
+      margin-bottom: 24px;
+    }
+
+    .star-container {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    /* Star button with outline style */
+    .star-btn {
+      background: none;
+      border: none;
+      font-size: 3.5rem;
+      cursor: pointer;
+      color: #ffc107;
+      transition: transform 0.1s, filter 0.1s;
+      padding: 0;
+      line-height: 1;
+      /* Outline effect using text-shadow */
+      text-shadow: 
+        -1px -1px 0 rgba(255, 193, 7, 0.4),
+        1px -1px 0 rgba(255, 193, 7, 0.4),
+        -1px 1px 0 rgba(255, 193, 7, 0.4),
+        1px 1px 0 rgba(255, 193, 7, 0.4),
+        0 -1.5px 0 rgba(255, 193, 7, 0.3),
+        0 1.5px 0 rgba(255, 193, 7, 0.3),
+        -1.5px 0 0 rgba(255, 193, 7, 0.3),
+        1.5px 0 0 rgba(255, 193, 7, 0.3);
+      filter: brightness(0.6);
+    }
+
+    .star-btn.active {
+      filter: brightness(1);
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .star-btn:hover {
+      transform: scale(1.1);
+    }
+
+    /* Label with emoji */
+    .rating-label-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 24px;
+      min-height: 40px;
+      visibility: hidden;
+    }
+    
+    .rating-label-wrapper.visible {
+      visibility: visible;
+    }
+
+    .rating-emoji {
+      font-size: 1.8rem;
+      display: inline-block;
+    }
+
+    .rating-label {
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: #333d4d;
+      letter-spacing: -0.02em;
+    }
+
+    /* Feedback Input */
+    .feedback-section {
+      text-align: left;
+      margin-top: 10px;
+    }
+
+    .feedback-label {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #333d4d;
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    .comment-input {
+      width: 100%;
+      min-height: 120px;
+      padding: 16px;
+      background-color: #f8fafc;
+      border: 1px solid #f1f5f9;
+      border-radius: 16px;
+      font-family: 'Kanit', sans-serif;
+      font-size: 0.95rem;
+      color: #333d4d;
+      resize: none;
+      box-sizing: border-box;
+    }
+
+    .comment-input::placeholder {
+      color: #94a3b8;
+    }
+
+    /* Submit Button */
+    .submit-btn {
+      width: 100%;
+      padding: 18px;
+      background-color: #dee5ef;
+      border: none;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #8c9bb0;
+      cursor: not-allowed;
+      transition: all 0.2s;
+      font-family: 'Kanit', sans-serif;
+      margin-top: 10px;
+    }
+
+    .submit-btn.ready {
+      background-color: #333d4d;
+      color: white;
+      cursor: pointer;
+    }
+
+    .submit-btn.ready:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+
+    /* Alert */
+    .alert {
+      padding: 12px 16px;
+      border-radius: 12px;
+      margin-bottom: 16px;
+      font-size: 0.9rem;
+      display: none;
+    }
+
+    .alert.show { display: block; }
+    .alert-error { background: #fee2e2; border: 1px solid #fecaca; color: #991b1b; }
+    .alert-success { background: #ecfdf5; border: 1px solid #d1fae5; color: #065f46; }
+
+    .header-nav {
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .back-arrow {
+      cursor: pointer;
+      font-size: 1.2rem;
+      color: #333d4d;
+      text-decoration: none;
+    }
+
+    .page-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #333d4d;
+    }
+  </style>
+</head>
+<body>
+  <div class="header-nav">
+    <a href="javascript:history.back()" class="back-arrow">←</a>
+    <span class="page-title">Rate Your Trip</span>
+  </div>
+
+  <div class="review-wrapper">
+    <div id="reviewAlert" class="alert"></div>
+
+    <!-- Success Banner -->
+    <div class="trip-completed-banner">
+      <span class="emoji">🎉</span>
+      <h2>Trip Completed!</h2>
+      <p>Hope you had a great journey</p>
+    </div>
+
+    <!-- Rating Card -->
+    <div class="card rating-card">
+      <h4 class="rating-title">How was your experience?</h4>
+
+      <div class="star-container" id="starContainer"></div>
+      
+      <div class="rating-label-wrapper" id="ratingLabelWrapper">
+        <span class="rating-emoji" id="ratingEmoji">👍</span>
+        <span class="rating-label" id="ratingLabel">Good</span>
+      </div>
+
+      <div class="feedback-section">
+        <label class="feedback-label">Share your feedback (optional)</label>
+        <textarea id="commentInput" class="comment-input" placeholder="Tell us about your experience..."></textarea>
+      </div>
+    </div>
+
+    <!-- Submit Button -->
+    <button id="submitBtn" class="submit-btn" disabled onclick="submitReview()">Please rate your trip</button>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    var reviewSelectedRating = 0;
+    var reviewCurrentBooking = null;
+
+    // ข้อความและ emoji ตามระดับคะแนน
+    var ratingData = [
+      { label: '', emoji: '' },
+      { label: 'Terrible', emoji: '😞' },
+      { label: 'Poor', emoji: '😕' },
+      { label: 'Average', emoji: '😐' },
+      { label: 'Good', emoji: '👍' },
+      { label: 'Excellent!', emoji: '😍' }
+    ];
+
+    window.addEventListener('load', async function () {
+      if (typeof requireAuth === 'function' && !requireAuth()) return;
+
+      var storedBooking = sessionStorage.getItem('selectedBooking');
+      if (storedBooking && storedBooking !== 'null') {
+        try {
+          reviewCurrentBooking = JSON.parse(storedBooking);
+        } catch (e) { console.error('Parse error', e); }
+      }
+
+      if (!reviewCurrentBooking) {
+        var bookingId = sessionStorage.getItem('reviewBookingId');
+        if (bookingId) {
+          try {
+            var res = await fetch(API_URL + '/bookings/' + bookingId);
+            if (res.ok) {
+              reviewCurrentBooking = await res.json();
+            }
+          } catch (e) { console.error('Fetch error', e); }
+        }
+      }
+
+      initStarRating();
+    });
+
+    function initStarRating() {
+      var container = document.getElementById('starContainer');
+      container.innerHTML = '';
+      for (var i = 1; i <= 5; i++) {
+        (function (score) {
+          var btn = document.createElement('button');
+          btn.className = 'star-btn';
+          btn.innerHTML = '★';
+          btn.type = 'button';
+          btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            setReviewRating(score);
+          });
+          btn.addEventListener('mouseenter', function () {
+            highlightStars(score);
+          });
+          container.appendChild(btn);
+        })(i);
+      }
+      container.addEventListener('mouseleave', function () {
+        highlightStars(reviewSelectedRating);
+      });
+    }
+
+    function highlightStars(upTo) {
+      var stars = document.querySelectorAll('.star-btn');
+      stars.forEach(function (star, idx) {
+        if (idx < upTo) {
+          star.classList.add('active');
+        } else {
+          star.classList.remove('active');
+        }
+      });
+    }
+
+    function setReviewRating(rating) {
+      reviewSelectedRating = rating;
+      highlightStars(rating);
+
+      var wrapper = document.getElementById('ratingLabelWrapper');
+      var label = document.getElementById('ratingLabel');
+      var emoji = document.getElementById('ratingEmoji');
+      
+      if (wrapper && label && emoji) {
+        var data = ratingData[rating] || ratingData[0];
+        label.textContent = data.label;
+        emoji.textContent = data.emoji;
+        wrapper.classList.add('visible');
+      }
+
+      var btn = document.getElementById('submitBtn');
+      btn.textContent = 'Submit Review';
+      btn.classList.add('ready');
+      btn.disabled = false;
+    }
+
+    async function submitReview() {
+      if (reviewSelectedRating === 0) {
+        showReviewAlert('กรุณาเลือกคะแนนก่อนส่งรีวิว', 'error');
+        return;
+      }
+
+      var user = (typeof getUser === 'function') ? getUser() : JSON.parse(localStorage.getItem('user'));
+      if (!user || !user.id) {
+        showReviewAlert('กรุณาเข้าสู่ระบบใหม่', 'error');
+        return;
+      }
+
+      var comment = document.getElementById('commentInput').value.trim();
+
+      if (!reviewCurrentBooking) {
+        showReviewAlert('ไม่พบข้อมูลการจอง กรุณากลับไปที่หน้า My Bookings', 'error');
+        return;
+      }
+
+      var tripId = null;
+      var driverId = null;
+
+      if (reviewCurrentBooking.trip) {
+        tripId   = reviewCurrentBooking.trip.id;
+        driverId = reviewCurrentBooking.trip.driver_id;
+      } else if (reviewCurrentBooking.trip_id) {
+        tripId   = reviewCurrentBooking.trip_id;
+        driverId = reviewCurrentBooking.driver_id;
+      }
+
+      if (!tripId || !driverId) {
+        showReviewAlert('ไม่พบข้อมูลทริป กรุณากลับไปที่หน้า My Bookings', 'error');
+        return;
+      }
+
+      var reviewData = {
+        rating:      reviewSelectedRating,
+        comment:     comment || null,
+        booking_id:  reviewCurrentBooking.id,
+        reviewer_id: user.id,
+        trip_id:     tripId,
+        driver_id:   driverId
+      };
+
+      var btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.textContent = 'กำลังส่ง...';
+
+      try {
+        var res = await fetch(API_URL + '/reviews/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(reviewData)
+        });
+
+        if (res.ok) {
+          showReviewAlert('ส่งรีวิวเรียบร้อยแล้ว ขอบคุณ!', 'success');
+          setTimeout(function () {
+            location.href = '/pages/dashboard.html';
+          }, 2000);
+        } else {
+          var data = await res.json();
+          showReviewAlert(data.detail || 'ส่งรีวิวไม่สำเร็จ', 'error');
+          btn.disabled = false;
+          btn.textContent = 'Submit Review';
+        }
+      } catch (e) {
+        showReviewAlert('เกิดข้อผิดพลาด: ' + e.message, 'error');
+        btn.disabled = false;
+        btn.textContent = 'Submit Review';
+      }
+    }
+
+    function showReviewAlert(msg, type) {
+      var el = document.getElementById('reviewAlert');
+      if (!el) return;
+      el.textContent = msg;
+      el.className = 'alert show alert-' + type;
+      setTimeout(function () { el.classList.remove('show'); }, 4000);
+    }
+  </script>
+</body>
+</html>

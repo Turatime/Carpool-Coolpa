@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS vehicles (
     brand TEXT NOT NULL,
     model TEXT NOT NULL,
     plate_number TEXT NOT NULL,
+    color TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (owner_id) REFERENCES users(id)
 );

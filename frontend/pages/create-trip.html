@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Carpool Coolpa — สร้างทริป</title>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <div id="headerMount"></div>
+
+  <main class="dashboard-layout">
+    <button class="btn-small" onclick="location.href='/pages/dashboard.html'" style="margin-bottom:20px">← กลับ</button>
+
+    <!-- Vehicle Selector -->
+    <div class="vehicle-manager">
+      <h4>เลือกรถสำหรับทริปนี้</h4>
+      <div class="form-group" style="margin-bottom:16px">
+        <label>เลือกรถที่จะใช้ในทริป</label>
+        <select id="tripVehicleSelect">
+          <option value="">เลือกรถของคุณ</option>
+        </select>
+      </div>
+      <button class="btn-small" onclick="location.href='/pages/my-vehicles.html'">จัดการรถของฉัน</button>
+    </div>
+
+    <!-- Create Trip Form -->
+    <div class="booking-form">
+      <h3>สร้างทริปใหม่</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>ต้นทาง</label>
+          <input id="tripOrigin" type="text" placeholder="เช่น กรุงเทพ">
+        </div>
+        <div class="form-group">
+          <label>ปลายทาง</label>
+          <input id="tripDest" type="text" placeholder="เช่น พัทยา">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>วันเวลาเดินทาง</label>
+          <input id="tripTime" type="datetime-local">
+        </div>
+        <div class="form-group">
+          <label>จำนวนที่ว่าง</label>
+          <input id="tripSeats" type="number" value="4" min="1">
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:16px">
+        <label>ราคาต่อที่นั่ง (฿)</label>
+        <input id="tripPrice" type="number" placeholder="เช่น 200">
+      </div>
+      <button class="auth-submit" onclick="createTrip()">ลงประกาศทริป</button>
+      <div id="tripError"   class="alert alert-error"   style="margin-top:10px"></div>
+      <div id="tripSuccess" class="alert alert-success" style="margin-top:10px"></div>
+    </div>
+  </main>
+
+  <script src="/js/app.js"></script>
+  <script>
+    window.addEventListener('load', () => {
+      if (!requireAuth()) return;
+      renderHeader('headerMount');
+      loadVehicles();
+    });
+
+    async function loadVehicles() {
+      const user = getUser();
+      try {
+        const res      = await fetch(`${API_URL}/vehicles/user/${user.id}`);
+        const vehicles = await res.json();
+        const select   = document.getElementById('tripVehicleSelect');
+        select.innerHTML = '<option value="">เลือกรถของคุณ</option>';
+        vehicles.forEach(v => {
+          const opt = document.createElement('option');
+          opt.value       = v.id;
+          opt.textContent = `${v.brand} ${v.model} • ${v.plate_number}`;
+          select.appendChild(opt);
+        });
+      } catch (e) { console.error(e); }
+    }
+
+    async function createTrip() {
+      const user      = getUser();
+      const origin    = document.getElementById('tripOrigin').value;
+      const dest      = document.getElementById('tripDest').value;
+      const time      = document.getElementById('tripTime').value;
+      const seats     = parseInt(document.getElementById('tripSeats').value);
+      const vehicleId = parseInt(document.getElementById('tripVehicleSelect').value);
+      const price     = parseFloat(document.getElementById('tripPrice').value);
+
+      if (!vehicleId) {
+        showAlert('tripError', 'กรุณาเลือกรถก่อนสร้างทริป', 'error');
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_URL}/trips/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            driver_id:      user.id,
+            origin,
+            destination:    dest,
+            vehicle_id:     vehicleId,
+            departure_time: new Date(time).toISOString(),
+            total_seats:    seats,
+            price_per_seat: price
+          })
+        });
+        if (res.ok) {
+          showAlert('tripSuccess', 'สร้างทริปสำเร็จ!', 'success');
+          setTimeout(() => location.href = '/pages/dashboard.html', 1500);
+        } else {
+          const data = await res.json();
+          showAlert('tripError', data.detail || 'สร้างทริปไม่สำเร็จ', 'error');
+        }
+      } catch (e) { showAlert('tripError', e.message, 'error'); }
+    }
+  </script>
+</body>
+</html>

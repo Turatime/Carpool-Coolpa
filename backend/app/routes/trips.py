@@ -64,12 +64,17 @@ def get_driver_stats(driver_id: int, db: Session):
 
 def build_trip_response(trip: Trip, driver: User, vehicle: Vehicle, db: Session):
     stats = get_driver_stats(driver.id, db)
-    booking_count = db.query(Booking).filter(Booking.trip_id == trip.id).count()
+    # Count only active bookings (exclude cancelled)
+    booking_count = db.query(Booking).filter(
+        Booking.trip_id == trip.id,
+        Booking.status != "cancelled"
+    ).count()
     vehicle_payload = {
         "id": vehicle.id if vehicle else None,
         "brand": vehicle.brand if vehicle else "",
         "model": vehicle.model if vehicle else "",
         "plate_number": vehicle.plate_number if vehicle else "",
+        "color": vehicle.color if vehicle else "",
     }
 
     return {
@@ -196,11 +201,15 @@ def cancel_trip(trip_id: int, driver_id: int, db: Session = Depends(get_db)):
     if trip.status == "cancelled":
         return {"message": "Trip already cancelled", "status": "cancelled"}
 
-    booking_count = db.query(Booking).filter(Booking.trip_id == trip.id).count()
+    # Count only active bookings (exclude cancelled)
+    booking_count = db.query(Booking).filter(
+        Booking.trip_id == trip.id,
+        Booking.status != "cancelled"
+    ).count()
     if booking_count > 0:
         raise HTTPException(
             status_code=400,
-            detail="Cannot cancel this trip because it already has bookings"
+            detail="Cannot cancel this trip because it already has active bookings"
         )
 
     trip.status = "cancelled"

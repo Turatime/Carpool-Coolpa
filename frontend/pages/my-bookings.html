@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Carpool Coolpa — รายการจองของคุณ</title>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css">
+  <style>
+    /* ── Section divider ──────────────────────────────────── */
+    .bookings-section-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-strong);
+      margin: 24px 0 12px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--line);
+    }
+
+    .bookings-section-title:first-child {
+      margin-top: 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="headerMount"></div>
+
+  <main class="dashboard-layout">
+    <button class="btn-small" onclick="location.href='/pages/dashboard.html'" style="margin-bottom:20px">← กลับ</button>
+
+    <h2>รายการจองของคุณ</h2>
+
+    <!-- Tab switcher -->
+    <div class="auth-tabs">
+      <button id="tabBtnPassenger" class="auth-tab is-active" onclick="toggleBookingTab('passenger')">ฉันเป็นคนนั่ง</button>
+      <button id="tabBtnDriver"    class="auth-tab"           onclick="toggleBookingTab('driver')">ฉันเป็นคนขับ</button>
+    </div>
+
+    <!-- ── Passenger Tab ──────────────────────────────────── -->
+    <div id="tab-passenger-content">
+      <div id="confirmSuccess" class="alert alert-success"></div>
+      <p class="bookings-section-title">ทริปที่ฉันจอง</p>
+      <div id="passengerBookingsContainer"></div>
+    </div>
+
+    <!-- ── Driver Tab ─────────────────────────────────────── -->
+    <!--
+      Layout (top → bottom):
+        1. รายการที่มีคนจองทริปฉัน  ← driverBookingsContainer
+        2. ทริป TU → MU (ทริปที่ฉันสร้าง)  ← driverTripsContainer
+    -->
+    <div id="tab-driver-content" style="display:none">
+      <div id="tripCancelSuccess" class="alert alert-success"></div>
+      <div id="tripCancelError"   class="alert alert-error"></div>
+
+      <!-- Section 1: bookings on my trips -->
+      <p class="bookings-section-title">รายการที่มีคนจองทริปฉัน</p>
+      <div id="driverBookingsContainer"></div>
+
+      <!-- Section 2: my created trips (TU → MU shown here, below) -->
+      <p class="bookings-section-title" style="margin-top:32px">ทริปที่ฉันสร้าง</p>
+      <div id="driverTripsContainer"></div>
+    </div>
+  </main>
+
+  <script src="/js/app.js"></script>
+  <script>
+    window.addEventListener('load', () => {
+      if (!requireAuth()) return;
+      renderHeader('headerMount');
+      loadPassengerBookings();
+      loadDriverBookings();
+      loadDriverTrips();
+    });
+
+    /* ── Tab toggle ─────────────────────────────────────── */
+    function toggleBookingTab(type) {
+      document.getElementById('tabBtnPassenger').classList.toggle('is-active', type === 'passenger');
+      document.getElementById('tabBtnDriver').classList.toggle('is-active',    type === 'driver');
+      document.getElementById('tab-passenger-content').style.display = type === 'passenger' ? 'block' : 'none';
+      document.getElementById('tab-driver-content').style.display    = type === 'driver'    ? 'block' : 'none';
+    }
+
+    /* ── Passenger bookings ─────────────────────────────── */
+    async function loadPassengerBookings() {
+      const user = getUser();
+      try {
+        const res      = await fetch(`${API_URL}/bookings/user/${user.id}`);
+        const bookings = await res.json();
+        const container = document.getElementById('passengerBookingsContainer');
+        container.innerHTML = bookings.length === 0
+          ? '<div class="empty-state"><p>ไม่มีรายการจอง</p></div>'
+          : '';
+
+        bookings.forEach(b => {
+          const div = document.createElement('div');
+          div.className = 'booking-item';
+          div.innerHTML = `
+            <div class="booking-item__info">
+              <h4>${b.trip.origin} → ${b.trip.destination}</h4>
+              <p>${b.seats_booked} ที่นั่ง | ฿${b.total_price} |
+                <span class="badge badge-${b.status}">${b.status}</span>
+              </p>
+            </div>
+            ${b.status === 'confirmed'
+              ? `<button class="btn-small" style="background:#fbbf24"
+                         onclick="openReviewForm(${b.id})">รีวิว</button>`
+              : ''}
+          `;
+          container.appendChild(div);
+        });
+      } catch (e) { console.error(e); }
+    }
+
+    /* ── Driver bookings (รายการที่มีคนจองทริปฉัน) ──────── */
+    async function loadDriverBookings() {
+      const user = getUser();
+      try {
+        const res      = await fetch(`${API_URL}/bookings/driver/${user.id}`);
+        const bookings = await res.json();
+        const container = document.getElementById('driverBookingsContainer');
+        container.innerHTML = bookings.length === 0
+          ? '<div class="empty-state"><p>ไม่มีคนจองทริปของคุณ</p></div>'
+          : '';
+
+        bookings.forEach(b => {
+          const div = document.createElement('div');
+          div.className = 'booking-item';
+          div.innerHTML = `
+            <div class="booking-item__info">
+              <h4>ทริป: ${b.trip.origin} → ${b.trip.destination}</h4>
+              <p>ผู้โดยสาร: ${b.passenger.full_name} | ${b.seats_booked} ที่นั่ง |
+                <span class="badge badge-${b.status}">${b.status}</span>
+              </p>
+            </div>
+            <div class="booking-item__actions">
+              ${b.status === 'paid'
+                ? `<button class="btn-small btn-confirm" onclick="confirmBooking(${b.id})">ยืนยัน</button>`
+                : ''}
+              ${b.status !== 'cancelled'
+                ? `<button class="btn-small btn-cancel" onclick="cancelBooking(${b.id})">ยกเลิก</button>`
+                : ''}
+            </div>
+          `;
+          container.appendChild(div);
+        });
+      } catch (e) { console.error(e); }
+    }
+
+    /* ── Driver trips (ทริปที่ฉันสร้าง — TU→MU อยู่ที่นี่) ── */
+    async function loadDriverTrips() {
+      const user = getUser();
+      try {
+        const res   = await fetch(`${API_URL}/trips/user/${user.id}`);
+        const trips = await res.json();
+        const container  = document.getElementById('driverTripsContainer');
+        const activeTrips = trips.filter(t => t.status !== 'cancelled');
+        container.innerHTML = activeTrips.length === 0
+          ? '<div class="empty-state"><p>คุณยังไม่มีทริปที่สร้างไว้</p></div>'
+          : '';
+
+        activeTrips.forEach(t => {
+          const div = document.createElement('div');
+          div.className = 'booking-item';
+          div.innerHTML = `
+            <div class="booking-item__info">
+              <h4>${t.origin} → ${t.destination}</h4>
+              <div class="driver-trip-meta">
+                <span>${t.vehicle.brand} ${t.vehicle.model}</span>
+                <span>ทะเบียน ${t.vehicle.plate_number}</span>
+                <span>${new Date(t.departure_time).toLocaleString('th-TH')}</span>
+                <span>ว่าง ${t.available_seats}/${t.total_seats} ที่</span>
+                <span>${t.booking_count} booking</span>
+              </div>
+            </div>
+            <div class="booking-item__actions">
+              ${t.can_cancel
+                ? `<button class="btn-small btn-cancel" onclick="cancelTrip(${t.id})">ยกเลิกทริป</button>`
+                : '<span class="badge badge-confirmed">ยกเลิกไม่ได้</span>'}
+            </div>
+          `;
+          container.appendChild(div);
+        });
+      } catch (e) { console.error(e); }
+    }
+
+    /* ── Actions ────────────────────────────────────────── */
+    async function confirmBooking(id) {
+      try {
+        const res = await fetch(`${API_URL}/bookings/${id}/confirm`, { method: 'PUT' });
+        if (res.ok) {
+          showAlert('tripCancelSuccess', 'ยืนยันการจองแล้ว!', 'success');
+          loadDriverBookings();
+          loadDriverTrips();
+        }
+      } catch (e) { console.error(e); }
+    }
+
+    async function cancelBooking(id) {
+      try {
+        const res  = await fetch(`${API_URL}/bookings/${id}/cancel`, { method: 'PUT' });
+        const data = await res.json();
+        if (res.ok) {
+          showAlert('tripCancelSuccess', 'ยกเลิกการจองแล้ว', 'success');
+          loadDriverBookings();
+          loadDriverTrips();
+        } else {
+          showAlert('tripCancelError', data.detail || 'ยกเลิกไม่สำเร็จ', 'error');
+        }
+      } catch (e) { showAlert('tripCancelError', e.message, 'error'); }
+    }
+
+    async function cancelTrip(id) {
+      const user = getUser();
+      try {
+        const res  = await fetch(`${API_URL}/trips/${id}/cancel?driver_id=${user.id}`, { method: 'PUT' });
+        const data = await res.json();
+        if (res.ok) {
+          showAlert('tripCancelSuccess', 'ยกเลิกทริปเรียบร้อยแล้ว', 'success');
+          loadDriverTrips();
+        } else {
+          showAlert('tripCancelError', data.detail || 'ยกเลิกทริปไม่สำเร็จ', 'error');
+        }
+      } catch (e) { showAlert('tripCancelError', e.message, 'error'); }
+    }
+
+    async function openReviewForm(id) {
+      try {
+        const res = await fetch(`${API_URL}/bookings/${id}`);
+        const booking = await res.json();
+        sessionStorage.setItem('reviewBookingId', id);
+        sessionStorage.setItem('selectedBooking', JSON.stringify(booking));
+        location.href = '/pages/review.html';
+      } catch (e) {
+        sessionStorage.setItem('reviewBookingId', id);
+        location.href = '/pages/review.html';
+      }
+    }
+  </script>
+</body>
+</html>
