@@ -80,6 +80,36 @@ def ensure_schema_compatibility():
         if "driver_id" not in review_columns:
             connection.execute(text("ALTER TABLE reviews ADD COLUMN driver_id INTEGER"))
 
+        table_names = set(inspector.get_table_names())
+        if "payments" not in table_names:
+            connection.execute(text("""
+                CREATE TABLE payments (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    booking_id INTEGER NOT NULL,
+                    payer_id INTEGER NOT NULL,
+                    amount FLOAT NOT NULL,
+                    payment_method VARCHAR DEFAULT 'wallet',
+                    status VARCHAR DEFAULT 'paid',
+                    paid_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (booking_id) REFERENCES bookings(id),
+                    FOREIGN KEY (payer_id) REFERENCES users(id)
+                )
+            """))
+        if "wallet_transactions" not in table_names:
+            connection.execute(text("""
+                CREATE TABLE wallet_transactions (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    transaction_type VARCHAR NOT NULL,
+                    amount FLOAT NOT NULL,
+                    reference_id INTEGER,
+                    note VARCHAR,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users(id)
+                )
+            """))
+
 ensure_schema_compatibility()
 
 app = FastAPI(title="Carpool-Coolpa API")

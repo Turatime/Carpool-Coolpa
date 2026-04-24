@@ -682,6 +682,64 @@ a { color: inherit; text-decoration: none; }
   font-size: 0.92rem;
 }
 
+.history-card {
+  background: var(--surface-solid);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.history-list {
+  display: grid;
+  gap: 12px;
+  max-height: 240px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.history-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.history-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.history-item:first-child {
+  padding-top: 0;
+}
+
+.history-item h4 {
+  margin: 0 0 4px;
+  color: var(--text-strong);
+  font-size: 0.98rem;
+}
+
+.history-item p {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 0.85rem;
+}
+
+.history-amount {
+  font-weight: 700;
+}
+
+.history-amount.is-positive {
+  color: #166534;
+}
+
+.history-amount.is-negative {
+  color: #b91c1c;
+}
+
 /* ── BUTTONS ────────────────────────────────────────────────── */
 .btn-small {
   padding: 8px 16px;
@@ -721,8 +779,11 @@ a { color: inherit; text-decoration: none; }
 }
 
 .badge-paid      { background: #dbeafe; color: #1e40af; }
+.badge-pending   { background: #fef3c7; color: #92400e; }
 .badge-confirmed { background: #dcfce7; color: #166534; }
 .badge-cancelled { background: #fee2e2; color: #991b1b; }
+.badge-refunded  { background: #ede9fe; color: #6d28d9; }
+.badge-failed    { background: #fee2e2; color: #b91c1c; }
 
 /* ── EMPTY STATE ────────────────────────────────────────────── */
 .empty-state {

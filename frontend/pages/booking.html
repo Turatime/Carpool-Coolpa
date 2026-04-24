@@ -326,6 +326,9 @@
         <!-- Booking Card -->
         <div class="detail-card">
           <h3 style="margin-top:0">Select Passengers</h3>
+          <div style="margin-bottom:12px; color:var(--text-soft); font-size:0.92rem">
+            การชำระเงินจะตัดจาก Wallet อัตโนมัติเมื่อกดยืนยันการจอง
+          </div>
           <div class="passenger-selector">
             <div>
               <div style="font-weight:600">Number of passengers</div>
@@ -378,7 +381,7 @@
           body: JSON.stringify({ trip_id: tripId, passenger_id: user.id, seats_booked: currentSeats })
         });
         if (res.ok) {
-          alert('Booking successful! Waiting for driver confirmation.');
+          alert('Booking successful! Payment completed via wallet. Waiting for driver confirmation.');
           location.href = '/pages/dashboard.html';
         } else {
           const data = await res.json();

@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import List
 from ..models.base import get_db
-from ..models.schemas import Booking, Trip, User
+from ..models.schemas import Booking, Trip, User, Payment, WalletTransaction
 
 router = APIRouter()
 
@@ -12,6 +12,18 @@ class BookingCreate(BaseModel):
     trip_id: int
     passenger_id: int
     seats_booked: int
+
+
+def serialize_payment(payment: Payment | None):
+    if not payment:
+        return None
+    return {
+        "id": payment.id,
+        "amount": payment.amount,
+        "payment_method": payment.payment_method,
+        "status": payment.status,
+        "paid_at": payment.paid_at,
+    }
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
@@ -58,6 +70,25 @@ def create_booking(booking_data: BookingCreate, db: Session = Depends(get_db)):
         status="paid",  # Starts as paid because balance is deducted
     )
     db.add(new_booking)
+    db.flush()
+
+    payment = Payment(
+        booking_id=new_booking.id,
+        payer_id=booking_data.passenger_id,
+        amount=total_price,
+        payment_method="wallet",
+        status="paid",
+    )
+    db.add(payment)
+    db.add(
+        WalletTransaction(
+            user_id=passenger.id,
+            transaction_type="booking_payment",
+            amount=-total_price,
+            reference_id=new_booking.id,
+            note=f"Payment for booking #{new_booking.id}",
+        )
+    )
     db.commit()
     db.refresh(new_booking)
     return new_booking
@@ -69,6 +100,7 @@ def get_user_bookings(user_id: int, db: Session = Depends(get_db)):
     results = []
     for b in bookings:
         trip = db.query(Trip).filter(Trip.id == b.trip_id).first()
+        payment = db.query(Payment).filter(Payment.booking_id == b.id).order_by(Payment.id.desc()).first()
         results.append(
             {
                 "id": b.id,
@@ -82,6 +114,7 @@ def get_user_bookings(user_id: int, db: Session = Depends(get_db)):
                 "seats_booked": b.seats_booked,
                 "total_price": b.total_price,
                 "status": b.status,
+                "payment": serialize_payment(payment),
                 "created_at": b.created_at,
             }
         )
@@ -96,6 +129,7 @@ def get_driver_bookings(driver_id: int, db: Session = Depends(get_db)):
     for b in bookings:
         passenger = db.query(User).filter(User.id == b.passenger_id).first()
         trip = db.query(Trip).filter(Trip.id == b.trip_id).first()
+        payment = db.query(Payment).filter(Payment.booking_id == b.id).order_by(Payment.id.desc()).first()
         results.append(
             {
                 "id": b.id,
@@ -109,6 +143,7 @@ def get_driver_bookings(driver_id: int, db: Session = Depends(get_db)):
                 "seats_booked": b.seats_booked,
                 "total_price": b.total_price,
                 "status": b.status,
+                "payment": serialize_payment(payment),
             }
         )
     return results
@@ -121,6 +156,7 @@ def get_booking_detail(booking_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Booking not found")
     trip = db.query(Trip).filter(Trip.id == booking.trip_id).first()
     driver = db.query(User).filter(User.id == trip.driver_id).first() if trip else None
+    payment = db.query(Payment).filter(Payment.booking_id == booking.id).order_by(Payment.id.desc()).first()
     return {
         "id": booking.id,
         "trip": {
@@ -137,6 +173,7 @@ def get_booking_detail(booking_id: int, db: Session = Depends(get_db)):
         "seats_booked": booking.seats_booked,
         "total_price": booking.total_price,
         "status": booking.status,
+        "payment": serialize_payment(payment),
         "created_at": booking.created_at,
     }
 
@@ -169,10 +206,22 @@ def cancel_booking(booking_id: int, db: Session = Depends(get_db)):
     # Refund seats and money
     trip = db.query(Trip).filter(Trip.id == booking.trip_id).first()
     passenger = db.query(User).filter(User.id == booking.passenger_id).first()
+    payment = db.query(Payment).filter(Payment.booking_id == booking.id).order_by(Payment.id.desc()).first()
 
     trip.available_seats += booking.seats_booked
     passenger.balance += booking.total_price
 
     booking.status = "cancelled"
+    if payment:
+        payment.status = "refunded"
+    db.add(
+        WalletTransaction(
+            user_id=passenger.id,
+            transaction_type="refund",
+            amount=booking.total_price,
+            reference_id=booking.id,
+            note=f"Refund for booking #{booking.id}",
+        )
+    )
     db.commit()
     return {"message": "Booking cancelled and refunded"}

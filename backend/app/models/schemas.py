@@ -15,6 +15,8 @@ class User(Base):
     vehicles = relationship("Vehicle", back_populates="owner")
     trips = relationship("Trip", back_populates="driver")
     bookings = relationship("Booking", back_populates="passenger")
+    payments = relationship("Payment", back_populates="payer")
+    wallet_transactions = relationship("WalletTransaction", back_populates="user")
     reviews_given = relationship("Review", foreign_keys="Review.reviewer_id", back_populates="reviewer")
     reviews_received = relationship("Review", foreign_keys="Review.driver_id", back_populates="driver")
 
@@ -63,7 +65,36 @@ class Booking(Base):
 
     trip = relationship("Trip", back_populates="bookings")
     passenger = relationship("User", back_populates="bookings")
+    payments = relationship("Payment", back_populates="booking")
     review = relationship("Review", back_populates="booking", uselist=False)
+
+
+class Payment(Base):
+    __tablename__ = "payments"
+    id = Column(Integer, primary_key=True, index=True)
+    booking_id = Column(Integer, ForeignKey("bookings.id"), nullable=False)
+    payer_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    amount = Column(Float, nullable=False)
+    payment_method = Column(String, default="wallet")
+    status = Column(String, default="paid")  # pending, paid, refunded, failed
+    paid_at = Column(DateTime, server_default=func.now())
+    created_at = Column(DateTime, server_default=func.now())
+
+    booking = relationship("Booking", back_populates="payments")
+    payer = relationship("User", back_populates="payments")
+
+
+class WalletTransaction(Base):
+    __tablename__ = "wallet_transactions"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    transaction_type = Column(String, nullable=False)  # topup, booking_payment, refund
+    amount = Column(Float, nullable=False)
+    reference_id = Column(Integer)
+    note = Column(String)
+    created_at = Column(DateTime, server_default=func.now())
+
+    user = relationship("User", back_populates="wallet_transactions")
 
 class Review(Base):
     __tablename__ = "reviews"

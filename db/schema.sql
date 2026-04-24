@@ -63,3 +63,27 @@ CREATE TABLE IF NOT EXISTS reviews (
     FOREIGN KEY (reviewer_id) REFERENCES users(id),
     FOREIGN KEY (driver_id) REFERENCES users(id)
 );
+
+CREATE TABLE IF NOT EXISTS payments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    booking_id INTEGER NOT NULL,
+    payer_id INTEGER NOT NULL,
+    amount REAL NOT NULL,
+    payment_method TEXT DEFAULT 'wallet',
+    status TEXT DEFAULT 'paid', -- pending, paid, refunded, failed
+    paid_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (booking_id) REFERENCES bookings(id),
+    FOREIGN KEY (payer_id) REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS wallet_transactions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    transaction_type TEXT NOT NULL, -- topup, booking_payment, refund
+    amount REAL NOT NULL,
+    reference_id INTEGER,
+    note TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
