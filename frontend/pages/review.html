@@ -386,27 +386,48 @@
       var tripId = null;
       var driverId = null;
 
+      // ดึงข้อมูล Trip ID และ Driver ID อย่างละเอียด
       if (reviewCurrentBooking.trip) {
-        tripId   = reviewCurrentBooking.trip.id;
+        tripId = reviewCurrentBooking.trip.id;
         driverId = reviewCurrentBooking.trip.driver_id;
-      } else if (reviewCurrentBooking.trip_id) {
-        tripId   = reviewCurrentBooking.trip_id;
+      } else {
+        tripId = reviewCurrentBooking.trip_id;
         driverId = reviewCurrentBooking.driver_id;
       }
 
+      // ตรวจสอบในระดับลึกขึ้นถ้ายังไม่พบ
+      if (!driverId && reviewCurrentBooking.trip && reviewCurrentBooking.trip.driver) {
+        driverId = reviewCurrentBooking.trip.driver.id;
+      }
+
       if (!tripId || !driverId) {
-        showReviewAlert('ไม่พบข้อมูลทริป กรุณากลับไปที่หน้า My Bookings', 'error');
+        console.warn('Data missing from session, attempting to fetch from API...');
+        try {
+          const res = await fetch(API_URL + '/bookings/' + reviewCurrentBooking.id);
+          if (res.ok) {
+            const freshBooking = await res.json();
+            tripId = freshBooking.trip.id;
+            driverId = freshBooking.trip.driver_id;
+          }
+        } catch (e) { console.error('Fetch fallback failed', e); }
+      }
+
+      if (!tripId || !driverId) {
+        console.error('Final missing data check:', { tripId, driverId, booking: reviewCurrentBooking });
+        showReviewAlert('ไม่พบข้อมูลทริปหรือคนขับ กรุณาลองใหม่อีกครั้ง', 'error');
         return;
       }
 
       var reviewData = {
-        rating:      reviewSelectedRating,
+        rating:      parseInt(reviewSelectedRating),
         comment:     comment || null,
-        booking_id:  reviewCurrentBooking.id,
-        reviewer_id: user.id,
-        trip_id:     tripId,
-        driver_id:   driverId
+        booking_id:  parseInt(reviewCurrentBooking.id),
+        reviewer_id: parseInt(user.id),
+        trip_id:     parseInt(tripId),
+        reviewee_id: parseInt(driverId)
       };
+
+      console.log('DEBUG: Sending review data:', reviewData);
 
       var btn = document.getElementById('submitBtn');
       btn.disabled = true;
@@ -425,8 +446,16 @@
             location.href = '/pages/dashboard.html';
           }, 2000);
         } else {
-          var data = await res.json();
-          showReviewAlert(data.detail || 'ส่งรีวิวไม่สำเร็จ', 'error');
+          var errorMsg = 'ส่งรีวิวไม่สำเร็จ';
+          try {
+            var data = await res.json();
+            console.error('DEBUG: Server error response:', data);
+            if (data.detail) {
+              errorMsg = (typeof data.detail === 'string') ? data.detail : JSON.stringify(data.detail);
+            }
+          } catch (e) { console.error('Error parsing error response', e); }
+          
+          showReviewAlert('Error: ' + errorMsg, 'error');
           btn.disabled = false;
           btn.textContent = 'Submit Review';
         }
