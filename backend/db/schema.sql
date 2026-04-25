@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS users (
     password TEXT NOT NULL,
     phone TEXT,
     balance REAL NOT NULL DEFAULT 0.0,
+    role TEXT DEFAULT 'passenger',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -54,14 +55,14 @@ CREATE TABLE IF NOT EXISTS reviews (
     trip_id INTEGER NOT NULL,
     booking_id INTEGER NOT NULL,
     reviewer_id INTEGER NOT NULL,
-    driver_id INTEGER NOT NULL,
+    reviewee_id INTEGER NOT NULL,
     rating INTEGER CHECK(rating >= 1 AND rating <= 5),
     comment TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (trip_id) REFERENCES trips(id),
     FOREIGN KEY (booking_id) REFERENCES bookings(id),
     FOREIGN KEY (reviewer_id) REFERENCES users(id),
-    FOREIGN KEY (driver_id) REFERENCES users(id)
+    FOREIGN KEY (reviewee_id) REFERENCES users(id)
 );
 
 CREATE TABLE IF NOT EXISTS payments (

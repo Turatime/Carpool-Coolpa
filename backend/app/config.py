@@ -10,7 +10,7 @@ BASE_DIR = Path(__file__).resolve().parents[2]
 
 
 def get_default_database_url() -> str:
-    db_path = BASE_DIR / "db" / "data" / "carpool.db"
+    db_path = BASE_DIR / "backend" / "db" / "data" / "carpool.db"
     db_path.parent.mkdir(parents=True, exist_ok=True)
     return f"sqlite:///{db_path.as_posix()}"
 

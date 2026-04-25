@@ -102,9 +102,6 @@
               <p>${b.seats_booked} ที่นั่ง | ฿${b.total_price} |
                 <span class="badge badge-${b.status}">${b.status}</span>
               </p>
-              <p style="margin-top:6px">การชำระเงิน:
-                <span class="badge badge-${paymentStatus}">${paymentStatus}</span>
-              </p>
             </div>
             ${b.status === 'confirmed'
               ? `<button class="btn-small" style="background:#fbbf24"
@@ -136,9 +133,6 @@
               <h4>ทริป: ${b.trip.origin} → ${b.trip.destination}</h4>
               <p>ผู้โดยสาร: ${b.passenger.full_name} | ${b.seats_booked} ที่นั่ง |
                 <span class="badge badge-${b.status}">${b.status}</span>
-              </p>
-              <p style="margin-top:6px">การชำระเงิน:
-                <span class="badge badge-${paymentStatus}">${paymentStatus}</span>
               </p>
             </div>
             <div class="booking-item__actions">
