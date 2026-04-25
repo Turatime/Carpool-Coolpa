@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Carpool Coolpa — กระเป๋าเงิน</title>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css">
+  <style>
+    .wallet-page {
+      min-height: 100vh;
+      background: radial-gradient(circle at top left, rgba(255, 255, 255, 0.9), transparent 28%),
+                  linear-gradient(180deg, #fff9f5 0%, #fffdfc 30%, #f7fbfc 100%);
+    }
+
+    .wallet-container {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 28px 0 40px;
+    }
+
+    .wallet-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+
+    .wallet-header button {
+      background: var(--surface-solid);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 16px;
+      color: var(--text-body);
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 180ms ease;
+    }
+
+    .wallet-header button:hover {
+      background: var(--surface-muted);
+    }
+
+    .wallet-header h1 {
+      margin: 0;
+      color: var(--text-strong);
+      font-size: 1.8rem;
+      flex: 1;
+    }
+
+    .wallet-balance-card {
+      background: linear-gradient(135deg, var(--brand-a), var(--brand-b));
+      border-radius: 30px;
+      padding: 40px;
+      color: white;
+      box-shadow: var(--shadow-lg);
+      margin-bottom: 28px;
+      text-align: center;
+    }
+
+    .wallet-balance-card small {
+      display: block;
+      font-size: 1rem;
+      opacity: 0.95;
+      margin-bottom: 12px;
+    }
+
+    .wallet-balance-card strong {
+      display: block;
+      font-size: 3.5rem;
+      font-weight: 700;
+      margin-bottom: 24px;
+    }
+
+    .wallet-section {
+      background: var(--surface-solid);
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      border-radius: 24px;
+      padding: 28px;
+      box-shadow: var(--shadow-md);
+      margin-bottom: 24px;
+    }
+
+    .wallet-section h2 {
+      margin: 0 0 20px;
+      color: var(--text-strong);
+      font-size: 1.3rem;
+    }
+
+    .topup-form {
+      display: grid;
+      gap: 16px;
+    }
+
+    .topup-form-group {
+      display: grid;
+      gap: 8px;
+    }
+
+    .topup-form-group label {
+      color: var(--text-body);
+      font-weight: 500;
+      font-size: 0.95rem;
+    }
+
+    .topup-form-group input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 2px solid transparent;
+      border-radius: 14px;
+      background: var(--surface-muted);
+      color: var(--text-strong);
+      outline: none;
+      transition: all 180ms ease;
+      font-size: 1rem;
+    }
+
+    .topup-form-group input:focus {
+      background: var(--surface-solid);
+      border-color: rgba(168, 213, 226, 0.95);
+      box-shadow: 0 0 0 5px rgba(168, 213, 226, 0.18);
+    }
+
+    .topup-submit {
+      width: 100%;
+      padding: 14px 20px;
+      background: linear-gradient(135deg, var(--brand-a), var(--brand-b));
+      border: none;
+      border-radius: 14px;
+      color: var(--text-strong);
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 180ms ease;
+    }
+
+    .topup-submit:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .history-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px;
+      background: var(--surface-muted);
+      border-radius: 14px;
+      border-left: 4px solid var(--brand-a);
+    }
+
+    .history-item h4 {
+      margin: 0 0 4px;
+      color: var(--text-strong);
+      font-size: 0.95rem;
+    }
+
+    .history-item p {
+      margin: 0;
+      color: var(--text-soft);
+      font-size: 0.85rem;
+    }
+
+    .history-amount {
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: var(--text-strong);
+    }
+
+    .history-amount.is-positive {
+      color: #10b981;
+    }
+
+    .history-amount.is-negative {
+      color: #ef4444;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-soft);
+    }
+
+    .empty-state p {
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    .alert {
+      padding: 14px 16px;
+      border-radius: 12px;
+      margin-bottom: 16px;
+      font-size: 0.95rem;
+      display: none;
+    }
+
+    .alert.show { display: block; }
+    .alert-error { 
+      background: #fee2e2; 
+      border: 1px solid #fecaca; 
+      color: #991b1b; 
+    }
+    .alert-success { 
+      background: #dcfce7; 
+      border: 1px solid #bbf7d0; 
+      color: #166534; 
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .section-header h2 {
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="headerMount"></div>
+
+  <div class="wallet-page">
+    <div class="wallet-container">
+      <!-- Header -->
+      <div class="wallet-header">
+        <button onclick="history.back()">← ย้อนกลับ</button>
+        <h1>💳 กระเป๋าเงิน</h1>
+      </div>
+
+      <!-- Balance Card -->
+      <div class="wallet-balance-card">
+        <small>ยอดเงินในกระเป๋า</small>
+        <strong id="walletBalance">฿0.00</strong>
+      </div>
+
+      <!-- Top-up Form -->
+      <div class="wallet-section">
+        <h2>เติมเงินเข้ากระเป๋า</h2>
+        <div id="topupError" class="alert alert-error"></div>
+        <div id="topupSuccess" class="alert alert-success"></div>
+        <form class="topup-form" onsubmit="handleTopup(event)">
+          <div class="topup-form-group">
+            <label for="topupAmount">จำนวนเงิน (บาท)</label>
+            <input type="number" id="topupAmount" placeholder="เช่น 500" min="1" step="1" required>
+          </div>
+          <button type="submit" class="topup-submit">ยืนยันการเติมเงิน</button>
+        </form>
+      </div>
+
+      <!-- History Section -->
+      <div class="wallet-section">
+        <div class="section-header">
+          <h2>ประวัติรายการเงิน</h2>
+          <button class="btn-small" onclick="loadWalletHistory()">🔄 รีเฟรช</button>
+        </div>
+        <div id="walletHistoryContainer" class="history-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    window.addEventListener('load', () => {
+      if (!requireAuth()) return;
+      renderHeader('headerMount');
+      loadWallet();
+      loadWalletHistory();
+    });
+
+    function clearAlerts() {
+      document.getElementById('topupError').classList.remove('show');
+      document.getElementById('topupSuccess').classList.remove('show');
+    }
+
+    async function loadWallet() {
+      const user = getUser();
+      try {
+        const res  = await fetch(`${API_URL}/wallet/${user.id}`);
+        const data = await res.json();
+        user.balance = data.balance;
+        localStorage.setItem('user', JSON.stringify(user));
+        document.getElementById('walletBalance').textContent = `฿${data.balance.toLocaleString('th-TH')}`;
+      } catch (e) { 
+        console.error(e);
+        showAlert('topupError', 'ไม่สามารถโหลดข้อมูลกระเป๋าเงิน', 'error');
+      }
+    }
+
+    async function handleTopup(event) {
+      event.preventDefault();
+      const user = getUser();
+      const amount = parseFloat(document.getElementById('topupAmount').value);
+      
+      if (!amount || amount <= 0) {
+        showAlert('topupError', 'กรุณาระบุจำนวนเงินที่ถูกต้อง', 'error');
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_URL}/wallet/topup`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: user.id, amount })
+        });
+        
+        if (res.ok) {
+          showAlert('topupSuccess', `เติมเงิน ฿${amount.toLocaleString('th-TH')} สำเร็จ!`, 'success');
+          document.getElementById('topupAmount').value = '';
+          setTimeout(() => {
+            clearAlerts();
+            loadWallet();
+            loadWalletHistory();
+          }, 1500);
+        } else {
+          const data = await res.json();
+          showAlert('topupError', data.detail || 'เติมเงินไม่สำเร็จ', 'error');
+        }
+      } catch (e) { 
+        showAlert('topupError', e.message, 'error');
+      }
+    }
+
+    async function loadWalletHistory() {
+      const user = getUser();
+      try {
+        const res = await fetch(`${API_URL}/wallet/history/${user.id}`);
+        const transactions = await res.json();
+        const container = document.getElementById('walletHistoryContainer');
+        
+        if (transactions.length === 0) {
+          container.innerHTML = '<div class="empty-state"><p>ยังไม่มีประวัติรายการเงิน</p></div>';
+          return;
+        }
+
+        const typeLabel = {
+          topup: 'เติมเงินเข้ากระเป๋า',
+          booking_payment: 'ชำระค่าจองทริป',
+          refund: 'คืนเงินการจอง'
+        };
+
+        container.innerHTML = '';
+        transactions.forEach(item => {
+          const row = document.createElement('div');
+          row.className = 'history-item';
+          const isPositive = item.amount >= 0;
+          const date = new Date(item.created_at);
+          const dateStr = date.toLocaleDateString('th-TH', { 
+            year: 'numeric', 
+            month: 'short', 
+            day: 'numeric' 
+          });
+          const timeStr = date.toLocaleTimeString('th-TH', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+          });
+          
+          row.innerHTML = `
+            <div>
+              <h4>${typeLabel[item.transaction_type] || item.transaction_type}</h4>
+              <p>${item.note || '-'} • ${dateStr} ${timeStr}</p>
+            </div>
+            <div class="history-amount ${isPositive ? 'is-positive' : 'is-negative'}">
+              ${isPositive ? '+' : '-'}฿${Math.abs(item.amount).toLocaleString('th-TH')}
+            </div>
+          `;
+          container.appendChild(row);
+        });
+      } catch (e) { 
+        console.error(e);
+        showAlert('topupError', 'ไม่สามารถโหลดประวัติรายการ', 'error');
+      }
+    }
+
+    function showAlert(elementId, message, type) {
+      const element = document.getElementById(elementId);
+      element.textContent = message;
+      element.classList.add('show');
+    }
+  </script>
+</body>
+</html>
