@@ -20,28 +20,6 @@
         </div>
       </div>
 
-      <!-- Wallet -->
-      <div class="wallet-card">
-        <div>
-          <small>ยอดเงินในกระเป๋า</small><br>
-          <strong id="walletBalance">฿0.00</strong>
-        </div>
-        <div style="display:flex; gap:8px">
-          <input id="topupAmount" type="number" placeholder="จำนวนเงิน"
-                 style="width:100px; padding:8px; border-radius:8px; border:1px solid var(--line)">
-          <button class="topup-btn" onclick="topUpWallet()">เติมเงิน</button>
-        </div>
-      </div>
-      <div id="topupError"   class="alert alert-error"></div>
-      <div id="topupSuccess" class="alert alert-success"></div>
-      <div class="history-card">
-        <div class="section-header" style="margin:0 0 16px">
-          <h2>ประวัติรายการเงิน</h2>
-          <button class="btn-small" onclick="loadWalletHistory()">รีเฟรช</button>
-        </div>
-        <div id="walletHistoryContainer" class="history-list"></div>
-      </div>
-
       <!-- Action Grid -->
       <div class="action-grid">
         <button class="action-card" onclick="location.href='/pages/search.html'">
@@ -59,6 +37,10 @@
         <button class="action-card" onclick="location.href='/pages/my-bookings.html'">
           <strong>📅 รายการจองของฉัน</strong>
           <small>ดูทริปที่คุณจองหรือคนจองคุณ</small>
+        </button>
+        <button class="action-card" onclick="location.href='/pages/wallet.html'">
+          <strong>💳 กระเป๋าเงิน</strong>
+          <small>จัดการยอดเงินและประวัติรายการ</small>
         </button>
       </div>
 
@@ -78,74 +60,8 @@
       renderHeader('headerMount');
       const user = getUser();
       document.getElementById('welcomeName').textContent = `สวัสดี, ${user.full_name}!`;
-      loadWallet();
-      loadWalletHistory();
       loadTrips();
     });
-
-    async function loadWallet() {
-      const user = getUser();
-      try {
-        const res  = await fetch(`${API_URL}/wallet/${user.id}`);
-        const data = await res.json();
-        user.balance = data.balance;
-        localStorage.setItem('user', JSON.stringify(user));
-        document.getElementById('walletBalance').textContent = `฿${data.balance.toLocaleString()}`;
-      } catch (e) { console.error(e); }
-    }
-
-    async function topUpWallet() {
-      const user   = getUser();
-      const amount = parseFloat(document.getElementById('topupAmount').value);
-      if (!amount || amount <= 0) return;
-      try {
-        const res = await fetch(`${API_URL}/wallet/topup`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ user_id: user.id, amount })
-        });
-        if (res.ok) {
-          showAlert('topupSuccess', 'เติมเงินสำเร็จ!', 'success');
-          document.getElementById('topupAmount').value = '';
-          loadWallet();
-          loadWalletHistory();
-        }
-      } catch (e) { showAlert('topupError', e.message, 'error'); }
-    }
-
-    async function loadWalletHistory() {
-      const user = getUser();
-      try {
-        const res = await fetch(`${API_URL}/wallet/history/${user.id}`);
-        const transactions = await res.json();
-        const container = document.getElementById('walletHistoryContainer');
-        container.innerHTML = transactions.length === 0
-          ? '<div class="empty-state"><p>ยังไม่มีประวัติรายการเงิน</p></div>'
-          : '';
-
-        const typeLabel = {
-          topup: 'เติมเงินเข้ากระเป๋า',
-          booking_payment: 'ชำระค่าจองทริป',
-          refund: 'คืนเงินการจอง'
-        };
-
-        transactions.forEach(item => {
-          const row = document.createElement('div');
-          row.className = 'history-item';
-          const isPositive = item.amount >= 0;
-          row.innerHTML = `
-            <div>
-              <h4>${typeLabel[item.transaction_type] || item.transaction_type}</h4>
-              <p>${item.note || '-'} • ${new Date(item.created_at).toLocaleString('th-TH')}</p>
-            </div>
-            <div class="history-amount ${isPositive ? 'is-positive' : 'is-negative'}">
-              ${isPositive ? '+' : '-'}฿${Math.abs(item.amount).toLocaleString()}
-            </div>
-          `;
-          container.appendChild(row);
-        });
-      } catch (e) { console.error(e); }
-    }
 
     async function loadTrips() {
       const user = getUser();
