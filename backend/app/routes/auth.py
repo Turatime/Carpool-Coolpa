@@ -16,6 +16,7 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str
     phone: Optional[str] = None
+    role: Optional[str] = "passenger"
 
 class UserLogin(BaseModel):
     email: EmailStr
@@ -57,7 +58,8 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
         full_name=user_data.full_name,
         email=user_data.email,
         password=hashed_password,
-        phone=user_data.phone
+        phone=user_data.phone,
+        role=user_data.role
     )
     db.add(new_user)
     db.commit()
@@ -71,7 +73,8 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
             "id": new_user.id,
             "full_name": new_user.full_name,
             "email": new_user.email,
-            "phone": new_user.phone
+            "phone": new_user.phone,
+            "role": new_user.role
         }
     }
 

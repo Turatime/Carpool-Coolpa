@@ -1,5 +1,4 @@
--- Database Schema for Carpool-Coolpa
-
+-- Database Schema for Carpool-Coolpa (Single Source of Truth: app/models/schemas.py)
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     full_name TEXT NOT NULL,
@@ -32,7 +31,7 @@ CREATE TABLE IF NOT EXISTS trips (
     total_seats INTEGER NOT NULL,
     available_seats INTEGER NOT NULL,
     price_per_seat REAL NOT NULL,
-    status TEXT DEFAULT 'active', -- active, completed, cancelled
+    status TEXT DEFAULT 'active',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (driver_id) REFERENCES users(id),
     FOREIGN KEY (vehicle_id) REFERENCES vehicles(id)
@@ -44,7 +43,7 @@ CREATE TABLE IF NOT EXISTS bookings (
     passenger_id INTEGER NOT NULL,
     seats_booked INTEGER NOT NULL,
     total_price REAL NOT NULL,
-    status TEXT DEFAULT 'pending', -- pending, paid, confirmed, cancelled, completed
+    status TEXT DEFAULT 'pending',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (trip_id) REFERENCES trips(id),
     FOREIGN KEY (passenger_id) REFERENCES users(id)
@@ -56,7 +55,7 @@ CREATE TABLE IF NOT EXISTS reviews (
     booking_id INTEGER NOT NULL,
     reviewer_id INTEGER NOT NULL,
     reviewee_id INTEGER NOT NULL,
-    rating INTEGER CHECK(rating >= 1 AND rating <= 5),
+    rating INTEGER NOT NULL CHECK(rating >= 1 AND rating <= 5),
     comment TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (trip_id) REFERENCES trips(id),
@@ -71,7 +70,7 @@ CREATE TABLE IF NOT EXISTS payments (
     payer_id INTEGER NOT NULL,
     amount REAL NOT NULL,
     payment_method TEXT DEFAULT 'wallet',
-    status TEXT DEFAULT 'paid', -- pending, paid, refunded, failed
+    status TEXT DEFAULT 'paid',
     paid_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (booking_id) REFERENCES bookings(id),
@@ -81,7 +80,7 @@ CREATE TABLE IF NOT EXISTS payments (
 CREATE TABLE IF NOT EXISTS wallet_transactions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
-    transaction_type TEXT NOT NULL, -- topup, booking_payment, refund
+    transaction_type TEXT NOT NULL,
     amount REAL NOT NULL,
     reference_id INTEGER,
     note TEXT,

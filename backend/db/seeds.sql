@@ -2,10 +2,10 @@
 -- Password for all seed users: "password123" (hashed value should be used in production)
 
 -- Insert Users
-INSERT INTO users (full_name, email, password, phone, role) VALUES 
-('Anan Kaewchai', 'anan@example.com', 'hashed_password_here', '+66 81 234 5678', 'driver'),
-('Somchai Panyarat', 'somchai@example.com', 'hashed_password_here', '+66 82 345 6789', 'driver'),
-('Alice Wonderland', 'alice@example.com', 'hashed_password_here', '+66 83 456 7890', 'passenger');
+INSERT INTO users (full_name, email, password, phone, role, balance) VALUES 
+('Anan Kaewchai', 'anan@example.com', '$2b$12$0nzpcy8Yu8n99gCKWzoa5ee.CjIojrBvVIBP2Z0HGv6dkEFdEDK', '+66 81 234 5678', 'driver', 0.0),
+('Somchai Panyarat', 'somchai@example.com', '$2b$12$0nzpcy8Yu8n99gCKWzoa5ee.CjIojrBvVIBP2Z0HGv6dkEFdEDK', '+66 82 345 6789', 'driver', 0.0),
+('Alice Wonderland', 'alice@example.com', '$2b$12$0nzpcy8Yu8n99gCKWzoa5ee.CjIojrBvVIBP2Z0HGv6dkEFdEDK', '+66 83 456 7890', 'passenger', 1000.0);
 
 -- Insert Vehicles
 INSERT INTO vehicles (owner_id, brand, model, plate_number, color) VALUES 

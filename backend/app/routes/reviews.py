@@ -12,7 +12,7 @@ class ReviewCreate(BaseModel):
     trip_id: int
     booking_id: int
     reviewer_id: int
-    driver_id: int
+    reviewee_id: int
     rating: int # 1-5
     comment: str = None
 
@@ -36,7 +36,7 @@ def create_review(review_data: ReviewCreate, db: Session = Depends(get_db)):
         trip_id=booking.trip_id,
         booking_id=booking.id,
         reviewer_id=booking.passenger_id,
-        driver_id=trip.driver_id,
+        reviewee_id=review_data.reviewee_id,
         rating=review_data.rating,
         comment=review_data.comment
     )
@@ -45,10 +45,10 @@ def create_review(review_data: ReviewCreate, db: Session = Depends(get_db)):
     db.refresh(new_review)
     return new_review
 
-@router.get("/driver/{driver_id}")
-def get_driver_reviews(driver_id: int, db: Session = Depends(get_db)):
-    reviews = db.query(Review).filter(Review.driver_id == driver_id).all()
-    avg_rating = db.query(func.avg(Review.rating)).filter(Review.driver_id == driver_id).scalar() or 0.0
+@router.get("/reviewee/{reviewee_id}")
+def get_reviewee_reviews(reviewee_id: int, db: Session = Depends(get_db)):
+    reviews = db.query(Review).filter(Review.reviewee_id == reviewee_id).all()
+    avg_rating = db.query(func.avg(Review.rating)).filter(Review.reviewee_id == reviewee_id).scalar() or 0.0
     return {
         "reviews": reviews,
         "average_rating": round(float(avg_rating), 1),
