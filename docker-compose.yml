@@ -8,10 +8,11 @@ services:
       - "8000:8000"
     volumes:
       - ./backend:/app
-      - ./db/data:/app/db/data
+      # ลบการ mount ./db/data ที่อยู่นอก backend ออก เพื่อให้ใช้ db ภายใน backend เท่านั้น
     environment:
-      - DATABASE_URL=sqlite:///./db/data/carpool.db
-      - SECRET_KEY=your-secret-key-here
+      # กำหนดให้ใช้ db ภายในโฟลเดอร์ db/data ของ backend
+      - DATABASE_URL=sqlite:///db/data/carpool.db
+      - SECRET_KEY=carpool_coolpa_super_secret_key_2024
     restart: always
 
   frontend:
@@ -22,6 +23,3 @@ services:
     depends_on:
       - backend
     restart: always
-
-volumes:
-  db-data:

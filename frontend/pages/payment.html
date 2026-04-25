@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Carpool Coolpa — ชำระเงิน</title>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css">
+  <style>
+    .payment-page {
+      min-height: 100vh;
+      background: radial-gradient(circle at top left, rgba(255, 255, 255, 0.9), transparent 28%),
+                  linear-gradient(180deg, #fff9f5 0%, #fffdfc 30%, #f7fbfc 100%);
+    }
+
+    .payment-container {
+      width: min(800px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 28px 0 40px;
+    }
+
+    .payment-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+
+    .payment-header button {
+      background: var(--surface-solid);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 16px;
+      color: var(--text-body);
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 180ms ease;
+    }
+
+    .payment-header button:hover {
+      background: var(--surface-muted);
+    }
+
+    .payment-header h1 {
+      margin: 0;
+      color: var(--text-strong);
+      font-size: 1.5rem;
+      flex: 1;
+    }
+
+    .trip-summary-card {
+      background: linear-gradient(135deg, var(--brand-a), var(--brand-b));
+      border-radius: 24px;
+      padding: 24px;
+      color: white;
+      box-shadow: var(--shadow-lg);
+      margin-bottom: 24px;
+    }
+
+    .trip-summary-card .trip-to {
+      font-size: 0.95rem;
+      opacity: 0.95;
+      margin-bottom: 8px;
+    }
+
+    .trip-summary-card .trip-destination {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+
+    .trip-summary-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 16px;
+      border-top: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .trip-summary-meta .meta-item {
+      font-size: 0.9rem;
+    }
+
+    .trip-summary-meta .total-amount {
+      font-size: 1.6rem;
+      font-weight: 700;
+    }
+
+    .payment-card {
+      background: var(--surface-solid);
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      border-radius: 24px;
+      padding: 28px;
+      box-shadow: var(--shadow-md);
+      margin-bottom: 24px;
+    }
+
+    .payment-card h2 {
+      margin: 0 0 20px;
+      color: var(--text-strong);
+      font-size: 1.2rem;
+    }
+
+    .payment-methods {
+      display: grid;
+      gap: 12px;
+    }
+
+    .payment-method {
+      display: flex;
+      align-items: center;
+      padding: 16px;
+      border: 2px solid var(--line);
+      border-radius: 14px;
+      background: var(--surface-muted);
+      cursor: pointer;
+      transition: all 180ms ease;
+    }
+
+    .payment-method:hover {
+      border-color: var(--brand-a);
+      background: var(--surface-solid);
+    }
+
+    .payment-method.selected {
+      border-color: var(--brand-a);
+      background: rgba(168, 213, 226, 0.1);
+    }
+
+    .payment-method input[type="radio"] {
+      margin-right: 16px;
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+    }
+
+    .payment-method-info {
+      flex: 1;
+    }
+
+    .payment-method-name {
+      font-weight: 600;
+      color: var(--text-strong);
+      margin-bottom: 4px;
+    }
+
+    .payment-method-desc {
+      font-size: 0.85rem;
+      color: var(--text-soft);
+    }
+
+    .payment-method-icon {
+      font-size: 1.5rem;
+      margin-left: auto;
+    }
+
+    .payment-form {
+      display: grid;
+      gap: 16px;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid var(--line);
+    }
+
+    .form-group {
+      display: grid;
+      gap: 8px;
+    }
+
+    .form-group label {
+      color: var(--text-body);
+      font-weight: 500;
+      font-size: 0.95rem;
+    }
+
+    .form-group input {
+      padding: 12px 16px;
+      border: 2px solid transparent;
+      border-radius: 12px;
+      background: var(--surface-muted);
+      color: var(--text-strong);
+      outline: none;
+      transition: all 180ms ease;
+      font-size: 1rem;
+    }
+
+    .form-group input:focus {
+      background: var(--surface-solid);
+      border-color: rgba(168, 213, 226, 0.95);
+      box-shadow: 0 0 0 5px rgba(168, 213, 226, 0.18);
+    }
+
+    .security-notice {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px;
+      background: #ecfdf5;
+      border: 1px solid #bbf7d0;
+      border-radius: 12px;
+      margin-top: 20px;
+    }
+
+    .security-notice-icon {
+      font-size: 1.5rem;
+    }
+
+    .security-notice-text {
+      font-size: 0.9rem;
+      color: #166534;
+    }
+
+    .payment-actions {
+      display: grid;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    .pay-button {
+      width: 100%;
+      padding: 16px 20px;
+      background: linear-gradient(135deg, var(--brand-a), var(--brand-b));
+      border: none;
+      border-radius: 14px;
+      color: var(--text-strong);
+      font-weight: 700;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: all 180ms ease;
+    }
+
+    .pay-button:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .cancel-button {
+      width: 100%;
+      padding: 14px 20px;
+      background: var(--surface-muted);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      color: var(--text-body);
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 180ms ease;
+    }
+
+    .cancel-button:hover {
+      background: var(--surface-solid);
+    }
+
+    .alert {
+      padding: 14px 16px;
+      border-radius: 12px;
+      margin-bottom: 16px;
+      font-size: 0.95rem;
+      display: none;
+    }
+
+    .alert.show { display: block; }
+    .alert-error { 
+      background: #fee2e2; 
+      border: 1px solid #fecaca; 
+      color: #991b1b; 
+    }
+  </style>
+</head>
+<body>
+  <div id="headerMount"></div>
+
+  <div class="payment-page">
+    <div class="payment-container">
+      <!-- Header -->
+      <div class="payment-header">
+        <button onclick="history.back()">← ย้อนกลับ</button>
+        <h1>ชำระเงิน</h1>
+      </div>
+
+      <!-- Trip Summary -->
+      <div class="trip-summary-card">
+        <div class="trip-to">Trip to</div>
+        <div class="trip-destination" id="tripDestination">เชียงใหม่</div>
+        <div class="trip-summary-meta">
+          <div class="meta-item">
+            <div style="font-size: 0.85rem; opacity: 0.9;">Apr 25, 2026</div>
+            <div style="font-weight: 600;">1 passenger</div>
+          </div>
+          <div class="total-amount" id="totalAmount">฿470</div>
+        </div>
+      </div>
+
+      <!-- Error Alert -->
+      <div id="paymentError" class="alert alert-error"></div>
+
+      <!-- Payment Methods -->
+      <div class="payment-card">
+        <h2>Select Payment Method</h2>
+        <div class="payment-methods">
+          <label class="payment-method selected">
+            <input type="radio" name="paymentMethod" value="creditcard" checked>
+            <div class="payment-method-info">
+              <div class="payment-method-name">💳 Credit/Debit Card</div>
+              <div class="payment-method-desc">Visa, Mastercard, American Express</div>
+            </div>
+          </label>
+
+          <label class="payment-method">
+            <input type="radio" name="paymentMethod" value="promptpay">
+            <div class="payment-method-info">
+              <div class="payment-method-name">📱 PromptPay</div>
+              <div class="payment-method-desc">Pay with QR Code or ID</div>
+            </div>
+          </label>
+
+          <label class="payment-method">
+            <input type="radio" name="paymentMethod" value="wallet">
+            <div class="payment-method-info">
+              <div class="payment-method-name">💰 TrueMoney Wallet</div>
+              <div class="payment-method-desc">Pay from your wallet balance</div>
+            </div>
+          </label>
+        </div>
+
+        <!-- Payment Form (shown based on selection) -->
+        <div id="paymentFormContainer" class="payment-form">
+          <!-- Form content will be inserted here based on selected method -->
+        </div>
+
+        <!-- Security Notice -->
+        <div class="security-notice">
+          <div class="security-notice-icon">🔒</div>
+          <div class="security-notice-text">Your payment is secured with 256-bit encryption</div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="payment-actions">
+          <button class="pay-button" onclick="processPayment()">Pay ฿470</button>
+          <button class="cancel-button" onclick="history.back()">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    window.addEventListener('load', () => {
+      if (!requireAuth()) return;
+      renderHeader('headerMount');
+      setupPaymentMethodListeners();
+      renderPaymentForm('creditcard');
+    });
+
+    function setupPaymentMethodListeners() {
+      const radios = document.querySelectorAll('input[name="paymentMethod"]');
+      radios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+          // Update selected styling
+          document.querySelectorAll('.payment-method').forEach(pm => {
+            pm.classList.remove('selected');
+          });
+          e.target.closest('.payment-method').classList.add('selected');
+          
+          // Render appropriate form
+          renderPaymentForm(e.target.value);
+        });
+      });
+    }
+
+    function renderPaymentForm(method) {
+      const container = document.getElementById('paymentFormContainer');
+      let formHTML = '';
+
+      if (method === 'creditcard') {
+        formHTML = `
+          <div class="form-group">
+            <label for="cardName">Cardholder Name</label>
+            <input type="text" id="cardName" placeholder="John Doe" required>
+          </div>
+          <div class="form-group">
+            <label for="cardNumber">Card Number</label>
+            <input type="text" id="cardNumber" placeholder="1234 5678 9012 3456" maxlength="19" required>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-group">
+              <label for="expiry">Expiry Date</label>
+              <input type="text" id="expiry" placeholder="MM/YY" maxlength="5" required>
+            </div>
+            <div class="form-group">
+              <label for="cvv">CVV</label>
+              <input type="text" id="cvv" placeholder="123" maxlength="3" required>
+            </div>
+          </div>
+        `;
+      } else if (method === 'promptpay') {
+        formHTML = `
+          <div style="text-align: center; padding: 20px;">
+            <div style="font-size: 4rem; margin-bottom: 16px;">📱</div>
+            <p style="color: var(--text-body); margin: 0 0 16px;">Scan QR Code with your mobile banking app</p>
+            <div style="background: var(--surface-muted); border-radius: 12px; padding: 20px; margin-bottom: 16px;">
+              <div style="width: 200px; height: 200px; background: white; border-radius: 8px; margin: 0 auto; display: flex; align-items: center; justify-content: center; color: var(--text-soft);">
+                [QR Code]
+              </div>
+            </div>
+            <p style="color: var(--text-soft); font-size: 0.9rem; margin: 0;">Reference: 123456789</p>
+          </div>
+        `;
+      } else if (method === 'wallet') {
+        formHTML = `
+          <div class="form-group">
+            <label for="phoneNumber">Phone Number</label>
+            <input type="tel" id="phoneNumber" placeholder="08x-xxx-xxxx" required>
+          </div>
+          <div style="background: #ecfdf5; border: 1px solid #bbf7d0; border-radius: 12px; padding: 16px; margin-top: 16px;">
+            <div style="color: #166534; font-weight: 600; margin-bottom: 8px;">✓ TrueMoney Wallet</div>
+            <p style="color: #166534; font-size: 0.9rem; margin: 0;">Your payment will be processed through TrueMoney Wallet</p>
+          </div>
+        `;
+      }
+
+      container.innerHTML = formHTML;
+    }
+
+    async function processPayment() {
+      const method = document.querySelector('input[name="paymentMethod"]:checked').value;
+      
+      // Validate form based on payment method
+      if (method === 'creditcard') {
+        const cardName = document.getElementById('cardName')?.value;
+        const cardNumber = document.getElementById('cardNumber')?.value;
+        const expiry = document.getElementById('expiry')?.value;
+        const cvv = document.getElementById('cvv')?.value;
+
+        if (!cardName || !cardNumber || !expiry || !cvv) {
+          showError('Please fill in all card details');
+          return;
+        }
+      } else if (method === 'wallet') {
+        const phoneNumber = document.getElementById('phoneNumber')?.value;
+        if (!phoneNumber) {
+          showError('Please enter your phone number');
+          return;
+        }
+      }
+
+      // Simulate payment processing
+      try {
+        // In a real application, this would call your backend API
+        alert('Payment processed successfully!');
+        history.back();
+      } catch (e) {
+        showError(e.message);
+      }
+    }
+
+    function showError(message) {
+      const errorDiv = document.getElementById('paymentError');
+      errorDiv.textContent = message;
+      errorDiv.classList.add('show');
+      setTimeout(() => {
+        errorDiv.classList.remove('show');
+      }, 5000);
+    }
+  </script>
+</body>
+</html>
