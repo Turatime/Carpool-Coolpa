@@ -41,6 +41,3 @@ A simple and cool ride-sharing platform built with FastAPI (Python) and HTML/JS/
 - `frontend/`: Static HTML/JS/CSS files.
 - `db/`: Database schema and initial seed data.
 - `docker-compose.yml`: Main configuration to run all services.
-
-## 📝 License
-MIT
