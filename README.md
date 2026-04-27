@@ -3,11 +3,22 @@
 A simple and cool ride-sharing platform built with FastAPI (Python) and HTML/JS/CSS.
 
 ## 🌟 Features
-- **Register & Login**: Join as a Passenger or Driver.
-- **Find Trips**: Search for available carpool seats by origin and destination.
-- **Create Trips**: Drivers can offer seats and set prices.
-- **Bookings**: Passengers can reserve seats and track their bookings.
 
+1. 👤 **User**
+   - **Login / Register** – Access the platform by creating an account or logging in  
+   - **My Car** – Manage vehicle information (for drivers)
+
+2. 🚗 **Trip**
+   - **Search Trips** – Find available trips by origin and destination  
+   - **Create Trips** – Drivers can create trips and set travel details  
+   - **Book Trips** – Passengers can reserve seats  
+   - **Confirm Booking** – Drivers approve booking requests  
+   - **Cancel Booking** – Cancel existing bookings  
+
+3. 💰 **Wallet**
+   - **Top-up** – Add balance to the wallet  
+   - **Review** – Rate and review after trips  
+   - **Transaction History** – View past transactions  
 ## 🛠️ Tech Stack
 - **Backend**: FastAPI (Python 3.11)
 - **Database**: SQLite (SQLAlchemy ORM)
