@@ -8,17 +8,30 @@ from ..models.schemas import Review, Booking, Trip, User
 
 router = APIRouter()
 
+from typing import Optional
+
 class ReviewCreate(BaseModel):
     trip_id: int
     booking_id: int
     reviewer_id: int
     reviewee_id: int
     rating: int # 1-5
-    comment: str = None
+    comment: Optional[str] = None
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
-def create_review(review_data: ReviewCreate, db: Session = Depends(get_db)):
-    booking = db.query(Booking).filter(Booking.id == review_data.booking_id).first()
+def create_review(review_input: dict, db: Session = Depends(get_db)):
+    print(f"DEBUG: Received review data: {review_input}")
+    
+    # ดึงข้อมูลจาก dict แทน Pydantic เพื่อความยืดหยุ่นในการดีบัก
+    booking_id = review_input.get("booking_id")
+    rating = review_input.get("rating")
+    comment = review_input.get("comment")
+    reviewee_id = review_input.get("reviewee_id")
+    
+    if not booking_id:
+        raise HTTPException(status_code=422, detail="Missing booking_id")
+
+    booking = db.query(Booking).filter(Booking.id == booking_id).first()
     if not booking:
         raise HTTPException(status_code=404, detail="Booking not found")
     
@@ -26,7 +39,7 @@ def create_review(review_data: ReviewCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Trip must be confirmed/completed to leave a review")
     
     # Check if review already exists
-    existing = db.query(Review).filter(Review.booking_id == review_data.booking_id).first()
+    existing = db.query(Review).filter(Review.booking_id == booking_id).first()
     if existing:
         raise HTTPException(status_code=400, detail="Review already exists for this booking")
     
@@ -36,9 +49,9 @@ def create_review(review_data: ReviewCreate, db: Session = Depends(get_db)):
         trip_id=booking.trip_id,
         booking_id=booking.id,
         reviewer_id=booking.passenger_id,
-        reviewee_id=review_data.reviewee_id,
-        rating=review_data.rating,
-        comment=review_data.comment
+        reviewee_id=reviewee_id or trip.driver_id,
+        rating=rating,
+        comment=comment
     )
     db.add(new_review)
     db.commit()
